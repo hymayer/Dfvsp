@@ -36,6 +36,7 @@ namespace szx {
         void preContraction();
         //计算每个顶点的入度和出度
         void calculateInAndOutDegree();
+        vector<int> getCutset() { return this->cutset; }
     };
 }
 

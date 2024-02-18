@@ -35,6 +35,9 @@ void Contraction:: pieOperation() {
 
 }
 
+
+
+//五步化简法
 void Contraction::preContraction() {
     queue<int> queue;
     vector<bool> inqueue(indegree.size(), false);

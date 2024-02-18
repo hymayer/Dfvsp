@@ -30,6 +30,7 @@ struct DFeedbackVertexSet {
 struct NodeInfo {
 	NodeId nodeId;
 	bool nodeInSet;
+	bool cutsetNode;
     int index;
 	int theta_before;
 	int theta_after;

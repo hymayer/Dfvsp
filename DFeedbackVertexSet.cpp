@@ -39,15 +39,17 @@ public:
         maxFail = maxFail;
 		int nbFail = 0;
 		int maxMvt = input.nodeNum;// the number of moves performed during a stage
-        int continuousSearchTime = 0;
+        int continuousSearchTime = 0;//连续搜索次数 
 		AdjList reverseAdjList; 
 		vector<NodeInfo> candidateNodesInfo;
 
+		S = doContraction(input, reverseAdjList);//S为当前的cutset，初始化为化简操作之后的cutset
+
 		// init reversed arc list and candidate node info
-		initCandidateNodesInfo(input, reverseAdjList, candidateNodesInfo);
+		initCandidateNodesInfo(input, reverseAdjList, candidateNodesInfo, S);
         candidateNodes = getOutput(input, S);
 
-        find_scc(input, reverseAdjList);
+        
 
 		while (T > Tmin && nbFail <= maxFail) {//连续50次都没有搜索到更优解
 			int nbMvt = 0;
@@ -90,7 +92,7 @@ public:
 		//checkGraph(newVertexSet);
 	}
 
-	void initCandidateNodesInfo(DFeedbackVertexSet& input, AdjList& reverseAdjList, vector<NodeInfo>& candidateNodesInfo) {
+	void initCandidateNodesInfo(DFeedbackVertexSet& input, AdjList& reverseAdjList, vector<NodeInfo>& candidateNodesInfo, vector<int>& cutset) {
 		reverseAdjList.resize(input.nodeNum);
 		for (int i = 0; i < input.nodeNum; i++) {
 			for (int j = 0; j < input.adjList[i].size(); j++) {
@@ -100,10 +102,16 @@ public:
 			NodeInfo nodeInfo;
 			nodeInfo.nodeId = i;
 			nodeInfo.nodeInSet = false;
+			nodeInfo.cutsetNode = false;
             nodeInfo.index = -1;
 			nodeInfo.theta_before = -1;
 	        nodeInfo.theta_after = -1;
 			candidateNodesInfo.push_back(nodeInfo);
+		}
+
+		for (int i = 0; i < cutset.size(); i++) {
+			candidateNodesInfo[i].nodeInSet = true;
+			candidateNodesInfo[i].cutsetNode = true;
 		}
 	}
 
@@ -133,7 +141,7 @@ public:
 
 	NodeId getNodeForMove(vector<NodeInfo>& candidateNodesInfo) {
 		int nodeId = rand(candidateNodesInfo.size());
-        while (candidateNodesInfo[nodeId].nodeInSet) {
+        while (candidateNodesInfo[nodeId].nodeInSet || candidateNodesInfo[nodeId].cutsetNode) {
             nodeId = rand(candidateNodesInfo.size());
         }
         return nodeId;
@@ -275,11 +283,12 @@ public:
 		graph.topological_sort();
 	}
 
-    void find_scc(DFeedbackVertexSet input, AdjList reverseAdjList) {
+    vector<int> doContraction(DFeedbackVertexSet input, AdjList reverseAdjList) {
         Contraction contraction(input, reverseAdjList);
         contraction.calculateInAndOutDegree();
-        //contraction.preContraction();
-        contraction.tarjan(0);
+        contraction.preContraction();
+        //contraction.tarjan(0);
+		return contraction.getCutset();
     }
 };
 

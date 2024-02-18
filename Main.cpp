@@ -63,8 +63,8 @@ int main(int argc, char* argv[]) {
 		secTimeout = 123456;
 		//ifstream ifs("/Users/huyumei/npbenchmark.data/DFVSP/Instance/pardalos.n50e100.txt");
 		//ofstream ofs("/Users/huyumei/CLionProjects/Dfvsp/result/result.pardalos.n50e100.txt");
-        ifstream ifs("/Users/huyumei/npbenchmark.data/DFVSP/Instance/test.txt");
-        ofstream ofs("/Users/huyumei/CLionProjects/Dfvsp/result/result.test.txt");
+        ifstream ifs("D:\\VSProjects\\npbenchmark.data\\DFVSP\\Instance\\test1.txt");
+        ofstream ofs("D:\\VSProjects\\Dfvsp\\result\\result.test1.txt");
 		test(ifs, ofs, secTimeout); // for self-test.
 	}
 	return 0;
