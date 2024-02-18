@@ -39,19 +39,17 @@ public:
         maxFail = maxFail;
 		int nbFail = 0;
 		int maxMvt = input.nodeNum;// the number of moves performed during a stage
-        int continuousSearchTime = 0;//连续搜索次数 
+        int continuousSearchTime = 0;//杩炵画寰幆娆℃暟
 		AdjList reverseAdjList; 
 		vector<NodeInfo> candidateNodesInfo;
 
-		S = doContraction(input, reverseAdjList);//S为当前的cutset，初始化为化简操作之后的cutset
-
-		// init reversed arc list and candidate node info
-		initCandidateNodesInfo(input, reverseAdjList, candidateNodesInfo, S);
+        // init reversed arc list and candidate node info
+        initCandidateNodesInfo(input, reverseAdjList, candidateNodesInfo);
+		S = doContraction(input, reverseAdjList);
+		updateCutsetNodesInfo(candidateNodesInfo, S);
         candidateNodes = getOutput(input, S);
 
-        
-
-		while (T > Tmin && nbFail <= maxFail) {//连续50次都没有搜索到更优解
+		while (T > Tmin && nbFail <= maxFail) {
 			int nbMvt = 0;
 			bool failure = true;
 			while (nbMvt <= maxMvt && bestNodeSet.size() < input.nodeNum && continuousSearchTime <= maxMvt) {
@@ -78,7 +76,7 @@ public:
 
 				}	
 			}
-			if (failure) {//在这一轮的循环中没有更优解
+			if (failure) {//?????????????路???????眉????
 				nbFail += 1;
 			} else {
 				nbFail = 0;
@@ -92,7 +90,14 @@ public:
 		//checkGraph(newVertexSet);
 	}
 
-	void initCandidateNodesInfo(DFeedbackVertexSet& input, AdjList& reverseAdjList, vector<NodeInfo>& candidateNodesInfo, vector<int>& cutset) {
+	void updateCutsetNodesInfo(vector<NodeInfo>& candidateNodesInfo, vector<int>& cutset) {
+        for (int i = 0; i < cutset.size(); i++) {
+            candidateNodesInfo[i].nodeInSet = true;
+            candidateNodesInfo[i].cutsetNode = true;
+        }
+	}
+
+	void initCandidateNodesInfo(DFeedbackVertexSet& input, AdjList& reverseAdjList, vector<NodeInfo>& candidateNodesInfo) {
 		reverseAdjList.resize(input.nodeNum);
 		for (int i = 0; i < input.nodeNum; i++) {
 			for (int j = 0; j < input.adjList[i].size(); j++) {
@@ -107,11 +112,6 @@ public:
 			nodeInfo.theta_before = -1;
 	        nodeInfo.theta_after = -1;
 			candidateNodesInfo.push_back(nodeInfo);
-		}
-
-		for (int i = 0; i < cutset.size(); i++) {
-			candidateNodesInfo[i].nodeInSet = true;
-			candidateNodesInfo[i].cutsetNode = true;
 		}
 	}
 
@@ -285,7 +285,6 @@ public:
 
     vector<int> doContraction(DFeedbackVertexSet input, AdjList reverseAdjList) {
         Contraction contraction(input, reverseAdjList);
-        contraction.calculateInAndOutDegree();
         contraction.preContraction();
         //contraction.tarjan(0);
 		return contraction.getCutset();

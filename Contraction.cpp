@@ -32,111 +32,102 @@ void Contraction::domeOperation() {
 
 void Contraction:: pieOperation() {
     //第一种情况，删除一个scc到另一个scc的边
-
 }
-
-
 
 //五步化简法
 void Contraction::preContraction() {
+    calculateInAndOutDegree();
     queue<int> queue;
-    vector<bool> inqueue(indegree.size(), false);
-    for (int i = 0; i < this->indegree.size(); i++) {
-        if (this->indegree[i] <= 1 || this->outdegree[i] <= 1) {
-            queue.push(i);
-            inqueue[i] = true;
-        }
-    }
+    vector<bool> visited(this->indegree.size(), false);
+    updateVisitedList(queue, visited);
 
     while (!queue.empty()) {
         int v = queue.front();
         queue.pop();
-        //IN0, 删除入度为0的顶点及其关联边
-        if (this->indegree[v] == 0) {
-            this->dagV.push_back(v);
-            for (int j : this->edge[v]) {
-                --this->indegree[j];
-                if (!inqueue[j] && this->indegree[j] <= 1) {
-                    queue.push(j);
-                    inqueue[j] = true;
-                }
-                this->reverseAdjList[j].erase(std::remove(this->reverseAdjList[j].begin(),this->reverseAdjList[j].end(),v),
-                                              this->reverseAdjList[j].end());
-            }
-            this->edge[v].clear();
-        }
-        //OUT0，删除出度为0的顶点及其关联边
-        else if (this->outdegree[v] == 0) {
-            this->dagV.push_back(v);
-            for (int j : this->reverseAdjList[v]) {
-                --this->outdegree[j];
-                if (!inqueue[j] && this->outdegree[j] <= 1) {
-                    queue.push(j);
-                    inqueue[j] = true;
-                }
-                this->edge[j].erase(std::remove(this->edge[j].begin(),this->edge[j].end(), v),
-                                    this->edge[j].end());
-            }
-            this->reverseAdjList[v].clear();
-        }
-        //LOOP
-        else if (std::find(this->edge[v].begin(), this->edge[v].end(), v) != this->edge[v].end()) {
+        if (this->indegree[v] == 0) {//IN0, 删除入度为0的顶点及其关联边
+           deleteNode(v);
+        } else if (this->outdegree[v] == 0) {//OUT0，删除出度为0的顶点及其关联边
+            deleteNode(v);
+        } else if (isSelfLoop(v)) {//LOOP
             this->cutset.push_back(v);
-            this->indegree[v] = 0;
-            this->outdegree[v] = 0;
-            for (int i : this->edge[v]) {
-                --this->indegree[i];
-                if (!inqueue[i] && this->indegree[i] <= 1) {
-                    queue.push(i);
-                    inqueue[i] = true;
-                }
-            }
-            this->edge[v].clear();
-            for (int j : this->reverseAdjList[v]) {
-                --this->outdegree[j];
-                if (!inqueue[j] && this->outdegree[j] <= 1) {
-                    queue.push(j);
-                    inqueue[j] = true;
-                }
-            }
-            this->reverseAdjList[v].clear();
-        }
-        //IN1
-        else if (this->indegree[v] == 1) {
+            deleteNode(v);
+        } else if (this->indegree[v] == 1) {//IN1
             int u = this->reverseAdjList[v][0];//u是v的唯一前序，把v合并到u
-            this->indegree[v] = 0;
-            this->outdegree[v] = 0;
-            --this->outdegree[u];
-            for (int i : this->edge[v]) {
-                this->edge[u].push_back(i);
-                ++this->outdegree[u];
-                this->reverseAdjList[i].erase(std::remove(this->reverseAdjList[i].begin(),this->reverseAdjList[i].end(), v),
-                                              this->reverseAdjList[i].end());
-                this->reverseAdjList[i].push_back(u);
-            }
-            this->reverseAdjList[v].clear();
-            this->edge[v].clear();
-            this->edge[u].erase(std::remove(this->edge[u].begin(), this->edge[u].end(), v), this->edge[u].end());
-        }
-        //OUT1
-        else if (this->outdegree[v] == 1) {
+            combineForward(v, u);
+            deleteNode(v);
+        } else if (this->outdegree[v] == 1) {//OUT1
             int u = this->edge[v][0];//u是v的唯一后序，把v合并到u
-            this->indegree[v] = 0;
-            this->outdegree[v] = 0;
-            --this->indegree[u];
-            for (int i : this->reverseAdjList[v]) {
-                this->edge[i].push_back(u);//所有v前序顶点的出边加上u
-                ++this->indegree[u];
-                this->edge[i].erase(std::remove(this->edge[i].begin(), this->edge[i].end(), v),
-                                    this->edge[i].end());//所有v前序顶点的出边删除v
-                this->reverseAdjList[u].push_back(i);
-            }
-            this->reverseAdjList[v].clear();
-            this->edge[v].clear();
-            this->reverseAdjList[u].erase(std::remove(this->reverseAdjList[u].begin(), this->reverseAdjList[u].end(), v),
-                                          this->reverseAdjList[u].end());
+            combineAfterward(v, u);
+            deleteNode(v);
+        }
+        updateVisitedList(queue, visited);
+    }
+}
+
+bool Contraction::isSelfLoop(int nodeId){
+    if (this->indegree[nodeId] == 1 && this->reverseAdjList[nodeId].size() == 1) {
+        if (this->reverseAdjList[nodeId][0] == nodeId) {
+            return true;
         }
     }
+    if (this->outdegree[nodeId] == 1 && this->edge[nodeId].size() == 1) {
+        if (this->edge[nodeId][0] == nodeId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Contraction::updateVisitedList(queue<int>& queue, vector<bool>& visited) {
+    for (int i = 0; i < this->indegree.size(); i++) {
+        if (!visited[i]) {
+            if (this->indegree[i] == 0 && this->outdegree[i] == 0) {
+                visited[i] = true;
+            } else if (this->indegree[i] <= 1 || this->outdegree[i] <= 1) {
+                queue.push(i);
+                visited[i] = true;
+            }
+        }
+    }
+}
+
+void Contraction::combineForward(int v, int u) {
+    vector<int> toNodes = this->edge[v];
+    for (int toNode : toNodes) {
+        this->edge[u].push_back(toNode);
+        this->reverseAdjList[toNode].push_back(u);
+        addOutdegree(u);
+        addIndegree(toNode);
+    }
+}
+
+void Contraction::combineAfterward(int v, int u) {
+    vector<int> fromNodes = this->reverseAdjList[v];
+    for (int fromNode : fromNodes) {
+        this->edge[fromNode].push_back(u);
+        this->reverseAdjList[u].push_back(fromNode);
+        addIndegree(u);
+        addOutdegree(fromNode);
+    }
+}
+
+void Contraction::deleteNode(int nodeId) {
+    vector<int> fromNodes = this->reverseAdjList.at(nodeId);
+    vector<int> toNodes = this->edge.at(nodeId);
+    for (int fromNode : fromNodes) {
+        this->edge[fromNode].erase(std::remove(this->edge[fromNode].begin(), this->edge[fromNode].end(), nodeId),
+                            this->edge[fromNode].end());
+        minusOutdegree(fromNode);
+    }
+    for (int toNode : toNodes) {
+        this->reverseAdjList[toNode].erase(std::remove(this->reverseAdjList[toNode].begin(),this->reverseAdjList[toNode].end(), nodeId),
+                                      this->reverseAdjList[toNode].end());
+        minusIndegree(toNode);
+    }
+    this->edge[nodeId].clear();
+    this->reverseAdjList[nodeId].clear();
+    clearIndegree(nodeId);
+    clearOutdegree(nodeId);
 }
 
 void Contraction::calculateInAndOutDegree() {

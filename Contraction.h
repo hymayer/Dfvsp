@@ -21,10 +21,9 @@ namespace szx {
         vector<bool> instack;
         vector<int> dfn, low;
         stack<int> s;
-        vector<int> indegree;
-        vector<int> outdegree;
+        vector<int> indegree; //记录所有顶点的入度
+        vector<int> outdegree; //记录所有顶点的出度
         vector<int> cutset;
-        vector<int> dagV;
         AdjList reverseAdjList;
     public:
         Contraction(DFeedbackVertexSet input, AdjList reverseAdjList);
@@ -36,7 +35,25 @@ namespace szx {
         void preContraction();
         //计算每个顶点的入度和出度
         void calculateInAndOutDegree();
-        vector<int> getCutset() { return this->cutset; }
+        //删除所有点i关联的边
+        void deleteNode(int i);
+        //合并顶点v到前序顶点u
+        void combineForward(int v, int u);
+        //合并顶点v到后序顶点u
+        void combineAfterward(int v, int u);
+        //更新队列
+        void updateVisitedList(queue<int>& queue, vector<bool>& visited);
+        //判断当前节点是否自循环
+        bool isSelfLoop(int nodeId);
+        vector<int> getCutset() { return this->cutset; };
+        int getIndegree(int nodeId) { return this->indegree[nodeId]; }
+        void addIndegree(int nodeId) { this->indegree[nodeId]++; }
+        void minusIndegree(int nodeId) { this->indegree[nodeId]--; }
+        void clearIndegree(int nodeId) { this->indegree[nodeId] = 0; }
+        int getOutdegree(int nodeId) { return  this->outdegree[nodeId]; }
+        void addOutdegree(int nodeId) { this->outdegree[nodeId]++; }
+        void minusOutdegree(int nodeId) { this->outdegree[nodeId]--; }
+        void clearOutdegree(int nodeId) { this->outdegree[nodeId] = 0; }
     };
 }
 
