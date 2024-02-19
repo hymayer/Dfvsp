@@ -34,7 +34,7 @@ public:
 		Nodes S;//current node set
 		// store best state
 		Nodes bestNodeSet;
-		Nodes candidateNodes;
+		//Nodes candidateNodes;
 		double T = T0;//current temperature
         maxFail = maxFail;
 		int nbFail = 0;
@@ -45,9 +45,9 @@ public:
 
         // init reversed arc list and candidate node info
         initCandidateNodesInfo(input, reverseAdjList, candidateNodesInfo);
-		S = doContraction(input, reverseAdjList);
-		updateCutsetNodesInfo(candidateNodesInfo, S);
-        candidateNodes = getOutput(input, S);
+		Nodes cutset = doContraction(input, reverseAdjList);
+		updateCutsetNodesInfo(candidateNodesInfo, cutset);
+       // candidateNodes = getOutput(input, S);
 
 		while (T > Tmin && nbFail <= maxFail) {
 			int nbMvt = 0;
@@ -63,7 +63,7 @@ public:
 				if (insertPosAndDf.second <= 0 || exp(-insertPosAndDf.second / T) > R) {
 					applyMove(input, reverseAdjList, S, candidateNodesInfo,
                               candidateNode, insertPosAndDf.first);
-                    candidateNodes = getOutput(input, S);
+                    //candidateNodes = getOutput(input, S);
 					nbMvt++;
                     continuousSearchTime = 0;
 					if (bestNodeSet.size() < S.size()) {
@@ -86,13 +86,12 @@ public:
 
 		output = getOutput(input, bestNodeSet);
 
-		DFeedbackVertexSet newVertexSet = getNewVertexSet(input, output);
+		//DFeedbackVertexSet newVertexSet = getNewVertexSet(input, output);
 		//checkGraph(newVertexSet);
 	}
 
 	void updateCutsetNodesInfo(vector<NodeInfo>& candidateNodesInfo, vector<int>& cutset) {
         for (int i = 0; i < cutset.size(); i++) {
-            candidateNodesInfo[i].nodeInSet = true;
             candidateNodesInfo[i].cutsetNode = true;
         }
 	}

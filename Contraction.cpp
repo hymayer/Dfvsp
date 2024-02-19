@@ -65,13 +65,9 @@ void Contraction::preContraction() {
 }
 
 bool Contraction::isSelfLoop(int nodeId){
-    if (this->indegree[nodeId] == 1 && this->reverseAdjList[nodeId].size() == 1) {
-        if (this->reverseAdjList[nodeId][0] == nodeId) {
-            return true;
-        }
-    }
-    if (this->outdegree[nodeId] == 1 && this->edge[nodeId].size() == 1) {
-        if (this->edge[nodeId][0] == nodeId) {
+    if (this->edge[nodeId].size() > 0) {
+        vector<int>::iterator it = std::find(this->edge[nodeId].begin(), this->edge[nodeId].end(), nodeId);
+        if (it != this->edge[nodeId].end()) {
             return true;
         }
     }
