@@ -26,13 +26,13 @@ namespace szx {
         vector<int> cutset;
         AdjList reverseAdjList;
     public:
-        Contraction(DFeedbackVertexSet input, AdjList reverseAdjList);
+        Contraction(DFeedbackVertexSet& input, AdjList& reverseAdjList);
         ~Contraction();
         //计算图的scc，使用tarjan算法
         void tarjan(int u);
         void pieOperation();
         void domeOperation();
-        void preContraction();
+        void LLContraction();
         //计算每个顶点的入度和出度
         void calculateInAndOutDegree();
         //删除所有点i关联的边

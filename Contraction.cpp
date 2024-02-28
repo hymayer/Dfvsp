@@ -6,7 +6,7 @@
 
 using namespace szx;
 
-Contraction::Contraction(DFeedbackVertexSet input, AdjList reverseAdjList) {
+Contraction::Contraction(DFeedbackVertexSet& input, AdjList& reverseAdjList) {
     this->n = input.nodeNum;
     this->m = input.arcNum;
     this->cnt = 0;
@@ -35,7 +35,7 @@ void Contraction:: pieOperation() {
 }
 
 //五步化简法
-void Contraction::preContraction() {
+void Contraction::LLContraction() {
     calculateInAndOutDegree();
     queue<int> queue;
     vector<bool> visited(this->indegree.size(), false);
@@ -96,6 +96,7 @@ void Contraction::combineForward(int v, int u) {
     for (int toNode : toNodes) {
         this->edge[u].push_back(toNode);
         this->reverseAdjList[toNode].push_back(u);
+        this->m++;
         addOutdegree(u);
         addIndegree(toNode);
     }
@@ -106,6 +107,7 @@ void Contraction::combineAfterward(int v, int u) {
     for (int fromNode : fromNodes) {
         this->edge[fromNode].push_back(u);
         this->reverseAdjList[u].push_back(fromNode);
+        this->m++;
         addIndegree(u);
         addOutdegree(fromNode);
     }
@@ -124,8 +126,12 @@ void Contraction::deleteNode(int nodeId) {
                                       this->reverseAdjList[toNode].end());
         minusIndegree(toNode);
     }
+    this->n--;
+    this->m = this->m - (this->edge[nodeId].size() + this->reverseAdjList[nodeId].size());
     this->edge[nodeId].clear();
     this->reverseAdjList[nodeId].clear();
+    //this->edge.erase(std::remove(this->edge.begin(), this->edge.end(), this->edge[nodeId]), this->edge.end());
+    //this->reverseAdjList.erase(std::remove(this->reverseAdjList.begin(), this->reverseAdjList.end(), this->reverseAdjList[nodeId]), this->reverseAdjList.end());
     clearIndegree(nodeId);
     clearOutdegree(nodeId);
 }

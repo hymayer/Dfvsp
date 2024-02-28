@@ -283,9 +283,9 @@ public:
 		graph.topological_sort();
 	}
 
-    vector<int> doContraction(DFeedbackVertexSet input, AdjList reverseAdjList) {
+	vector<int> doContraction(DFeedbackVertexSet& input, AdjList& reverseAdjList) {
         Contraction contraction(input, reverseAdjList);
-        contraction.preContraction();
+        contraction.LLContraction();
         //contraction.tarjan(0);
 		return contraction.getCutset();
     }
