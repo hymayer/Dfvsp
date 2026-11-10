@@ -1,37 +1,45 @@
-#!/usr/bin/env python3
-"""Regression for actual Tessent quoted escaped-identifier report spelling."""
-from pathlib import Path
-import json
-import subprocess
-import sys
-import tempfile
-ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT))
-from fault_report import norm,parse_fault_line
-from run_ffps import faults,new_problem_sites,association
-sample=r'''0   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
-1   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
-0   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
-1   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
-'''
-assert parse_fault_line(sample.splitlines()[0])[2]==r'"/\dfdct_dout[0]$_DFFE_PP_ /Q"'
-assert norm(parse_fault_line(sample.splitlines()[0])[2])=='dfdct_dout[0]$_DFFE_PP_/Q'
-assert norm(r'/dfdct_dout\[0\]$_DFFE_PP_/Q')==norm(r'"/\dfdct_dout[0]$_DFFE_PP_ /Q"')
-for bad in ['0 DS "unterminated','0 DS /two tokens','0 DS','2 DS /pin']:
-    try:parse_fault_line(bad)
-    except ValueError:pass
-    else:raise AssertionError('Malformed line accepted: '+bad)
-with tempfile.TemporaryDirectory() as d:
-    p=Path(d);report=p/'quoted.report';report.write_text(sample)
-    actual=faults(report);assert len(actual)==4
-    canonical=p/'canonical.report';canonical.write_text(sample.replace('"/\\','/').replace(' /Q"','/Q').replace(' /QN"','/QN'))
-    assert faults(canonical)==actual
-    changed=dict(actual);changed[('0','dfdct_dout[0]$_DFFE_PP_/QN')]='AU.PC'
-    assert new_problem_sites(actual,changed)=={'dfdct_dout[0]$_DFFE_PP_/QN'}
-    names=(ROOT/'data/candidates.txt').read_text().splitlines();catalog=p/'catalog.log'
-    catalog.write_text(''.join('Target: '+n+'\n/dfdct_dout[0]$_DFFE_PP_/QN\n' for n in names))
-    subprocess.run([sys.executable,'-B',str(ROOT/'ffps/bind_fault_sites.py'),'--catalog',str(catalog),'--report',str(report),'--out',str(p/'bound')],check=True)
-    groups=association(p/'bound/cell2Fault.log',names)
-    assert len(groups)==44 and all(v=={'dfdct_dout[0]$_DFFE_PP_/QN'} for v in groups.values())
-    subprocess.run([sys.executable,'-B',str(ROOT/'tools/compare_coverage.py'),'--fs',str(report),'--ffps',str(canonical),'--detected','DS,DS.*','--out',str(p/'audit')],check=True)
-print('QUOTED_ESCAPED_SITE_PARSER_BINDING_AND_COMPARISON_PASS; real ATPG not run')
+{
+  "scope": "JPEG FFPS with shared quoted escaped-Verilog basic fault-report parser; reuse same baseline reports",
+  "files": {
+    "README.md": "5a5c422c935d83abd9967c2e9c64e9c0ae46d2c15de68c953e0448b350a895fa",
+    "data/candidate_manifest.json": "5d2e2833124c1000fa4fe0b85982d64dc3913608de300bcf24ac7aac4df0ed2e",
+    "data/candidate_top1pct.txt": "3853500624f24e1bb0a857597e3879481d4222efbef138a28e35b4849f896c32",
+    "data/candidates.txt": "0bd2e7e2fcc1d906abf36dbd33f2fd78a054b22a6e497da82a4387c991bd46e2",
+    "data/jpeg_001_sIE.log": "ecc98ead7dae28aa4aeb734bbd14963c23f383e73637cbd275672d3b15e305e4",
+    "evidence/candidate_input_original.txt": "045cf02d8e7c0ed05d314b7ec3e51de7fe453bd9dda7fbe6ce057a19da8e44b0",
+    "evidence/candidate_mapping.json": "60c519f80989ead3730700abaebb5e9e5d5e16047f43eaf542bf97f03bed0d12",
+    "evidence/chain_summary.json": "e423c1f5fd3b5fafaf95e38784b1582b05e14ee1caaa80fa625544a52813cea4",
+    "evidence/ffps_local_validation.json": "9510cd4c27952b99a3d93b54da32541476078ef6a8252921a8e9af02fea15c4b",
+    "evidence/functional_equivalence.json": "cd76c3223851d558fb2d6f05584cfe0cd059d4e6e8aa8ee307e741f85e807bc8",
+    "evidence/generated_library_validation.json": "136b7ae390185b4df9294869d5aa7e6628d68c9d7da7cc696e3f14663b6a129d",
+    "evidence/local_image_lock.json": "6555fd434e8b80a9363c4d16073d855871464ce4e55fa608728885374439fd5c",
+    "evidence/required_cell_types.csv": "f402d53e9de60108cd0b278320e0eb953a9f3c54b1f10ec67c514521c9416956",
+    "evidence/scan_chains.csv": "5c8142e5e7f0675d22f6868a7a45e6913e818ea0a8bed7899fc85ffa893bd0ad",
+    "evidence/scan_liberty_adapter.json": "0ec2df8a9747ca6d36651ddeb296b4f38dc5ed4ac2cee31869af62f699aed9dd",
+    "fault_report.py": "e24849d11f4237d2f503bdbe3732095ec9609d25bc5c3fc31c4b7f191e609322",
+    "ffps/bind_fault_sites.py": "746e47323f3d2e2f7b3098b676a5ffe3faf45e62d97b73509451e2896be4a8d0",
+    "ffps/reference/compare_faults.py": "f5e4726e1a4cb8d34226b676d36e96ad689e8ee0e43ffd5261e5b42756b249ea",
+    "ffps/reference/pickCell.py": "0e14663347a0f3ba186d96f534786d9da11688c4d13f8f1d6d9d63c1aeafe7be",
+    "ffps/reference/run_script": "62c23b67be22352d3b6ce030b53f553f2801c08c681faecd5b0d80edcd368599",
+    "ffps/structural/cell2Fault.log": "944f966dede491ea9f0e06aa01a6157901552a872a18e0b7cf674a7249a1473f",
+    "ffps/structural/manifest.json": "391d30a0715d77b8c22e6728691c8f5e02daff855baf04fdfa3ad9109cb069da",
+    "lib/LICENSE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "lib/Nangate45_JPEG_generated.tcelllib": "b9ab8e2ec01da719f3a24264441a2ff9bba4b0717325afab2f57c23f5c471e68",
+    "lib/NangateOpenCellLibrary_typical_scan.lib": "d67eeb6ac6d1a6456b005c1839183863585e6bf4c566709aa6cf23da1e21cf49",
+    "lib/NangateOpenCellLibrary_typical_source.lib": "8d540a4d4cf6d09d27c87ad067857a9c0c2eeb023ab7a56e058cd3113db4e9b1",
+    "netlist/jpeg_full_scan.v": "4616756d886838d864b0fb071af685496dc6b1fa014575855d8252c6310ac293",
+    "run_atpg.py": "d0b01d276514dbebe8eb5c1f06f0dfa3ee893539da3f13e7e330f5b6b7b6c86f",
+    "run_ffps.py": "38263e573aad7e48ecc4e1b5b37d5376e2ec347d060ecfc5c8956dbb30507fe8",
+    "run_full_scan.py": "e098502304d773f04c7458beeade71ac70aabb76fcde53b71a9fcff52c58d681",
+    "scr/jpeg.proc": "d6ee578b770df972ce8691a3de335c601221d2dd3f1729ca0aac270665df3738",
+    "scr/jpeg_atpg.dofile": "0da841390ac1759291d9080a96d3aec31269d3ad8805a5652d4ced728c61752b",
+    "scr/scan_chains.tcl": "b5fe929a3e717f086782416c7a2a4f63c246b5019519f3fdc654efb3c8673f7f",
+    "tests/test_controller_mock.py": "0ff4689ca8bee6309a3ac5674d2fd834c395a78f566090f8789805010cdf3952",
+    "tests/test_report_parser.py": "e78bb1f14fd629d4bc275de0241ad230f46fdf678bed6618decff5f7150e4183",
+    "tools/compare_coverage.py": "b67914c4f0c6bade19e069d8fab70a9c06409c25ac14c8e6f557a98d9c90c47d",
+    "tools/generate_nangate.py": "a8c75c2ee16d7d04fadbe15a530f81255e1b647e9ed9764a7432b50101baddf2",
+    "tools/prepare_candidates.py": "89c7b025e8b293a71955d6d039245f49183a49907eb34ed71a47e06b5d9207d1",
+    "\u6267\u884c\u6307\u5357.md": "5dba9ef18b26c7be78f2cecc6a866feacef1bb42d7478ce653d527e5d0b73849",
+    "\u66f4\u65b0\u5e76\u590d\u7528\u62a5\u544a.md": "893e8a0c67e2a29f67779eede28ce6aafa2fb9f8e20fac0b7dc31ce77ee76607"
+  }
+}
