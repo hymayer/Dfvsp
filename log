@@ -1,370 +1,204 @@
-/software/mentor/dft/tessent_2019_1/bin/tessent -shell -dofile /data5/hwx1340340/PartialScanCases/JPEG/scr/jpeg_atpg.dofile -logfile /data5/hwx1340340/PartialScanCases/JPEG/runs/SA_FULL_check_20261110_151930_692041/tessent.log -replace
-//  Tessent Shell  2019.1    Fri Feb 15 21:15:11 GMT 2019
-//                Copyright 2011-2019 Mentor Graphics Corporation
-//
-//                           All Rights Reserved.
-//
-//    THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION WHICH
-//  IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS LICENSORS AND IS
-//                        SUBJECT TO LICENSE TERMS.
-//
-//  Mentor Graphics software executing under x86-64 Linux on Tue Nov 10 15:19:32 CST 2026.
-//  64 bit version
-//  Host: weimingv200-4 (16 x 3.0 GHz, 64427 MB RAM, 3967 MB Swap)
-//
-//  Note: License will be released if tool is idle for 240 minutes
-//  command: # Run only through run_atpg.py, which supplies a generated parameter file.
-//  command: proc jpeg_main {} {
-//               if {![info exists ::env(JPEG_PARAMETER_FILE)]} {error "Use run_atpg.py"}
-//               source $::env(JPEG_PARAMETER_FILE)
-//               foreach v {root out model stage cell_libraries abort_limits sequential_depth processors read_liberty_attributes} {
-//                   upvar 0 jpeg_$v $v
-//               }
-//               # source defines local variables within this proc. No environment/license dump.
-//               if {[llength $cell_libraries]==0} {error "Missing Nangate45 Tessent functional cell models"}
-//               set_context patterns -scan
-//               foreach path $cell_libraries {
-//                   if {![file isfile $path]} {error "Missing cell library: $path"}
-//                   read_cell_library $path
-//               }
-//               if {$read_liberty_attributes} {
-//                   read_liberty [file join $root lib NangateOpenCellLibrary_typical_scan.lib]
-//               }
-//               read_verilog [file join $root netlist jpeg_full_scan.v]
-//               set_current_design jpeg_encoder
-//               add_clocks 0 clk
-//               # rst directly drives active-low RN/SN; retain the user's reset-as-clock style.
-//               add_clocks 1 rst
-//               add_scan_groups group1 [file join $root scr jpeg.proc]
-//               source [file join $root scr scan_chains.tcl]
-//               # Deliberately do not auto-blackbox unresolved cells or ignore DRC errors.
-//               set_clock_off_simulation off
-//               set_pattern_type -sequential $sequential_depth -multiple_load on
-//               set_split_capture_cycle on
-//               set_system_mode analysis
-//               report_scan_chains
-//               report_statistics
-//               if {$stage eq "check"} {
-//                   set f [open [file join $out COMPLETE] w]
-//                   puts $f "ANALYSIS_ENTERED_REVIEW_SCAN_REPORT expected_chains=44 expected_scan_cells=4384"
-//                   close $f
-//                   puts "JPEG_CHECK_COMPLETE: review all 44 chains / 4384 scan cells and DRC before ATPG."
-//                   return
-//               }
-//               set_fault_mode collapsed
-//               if {$model eq "SA"} {set_fault_type stuck; set label SA} else {set_fault_type transition; set label TRANS}
-//               set_possible_credit 0
-//               add_faults -all
-//               write_faults [file join $out rpt ${label}_before.report] -replace -format basic
-//               if {$processors > 0} {add_processors $processors}
-//               set pass 0
-//               foreach limit $abort_limits {
-//                   incr pass
-//                   puts "JPEG_ATPG_PASS model=$model pass=$pass abort_limit=$limit"
-//                   set_abort_limit $limit
-//                   create_patterns -compaction_effort low -no_terminate_ineffective_atpg -no_auto
-//                   report_statistics
-//               }
-//               write_faults [file join $out rpt ${label}_FULL.report] -replace -format basic
-//               write_patterns [file join $out patterns ${label}_FULL.bin] -binary -replace
-//               report_statistics
-//               if {$processors > 0} {delete_processors}
-//               set f [open [file join $out COMPLETE] w]
-//               puts $f "ATPG_COMMANDS_COMPLETED model=$model passes=$pass"
-//               close $f
-//               puts "JPEG_ATPG_COMPLETE: full classified faults and patterns saved."
-//           }
-//  command: if {[catch {jpeg_main} message]} {
-//               puts stderr "JPEG_RUN_FAILED: $message"
-//               if {[info exists ::errorInfo]} {puts stderr $::errorInfo}
-//           }
-//  sub-command: set_context patterns -scan 
-//  sub-command: read_cell_library /data5/hwx1340340/PartialScanCases/JPEG/lib/Nangate45_JPEG_generated.tcelllib 
-//  Reading DFT Library file /data5/hwx1340340/PartialScanCases/JPEG/lib/Nangate45_JPEG_generated.tcelllib
-//  Finished reading file /data5/hwx1340340/PartialScanCases/JPEG/lib/Nangate45_JPEG_generated.tcelllib
-//  sub-command: read_liberty /data5/hwx1340340/PartialScanCases/JPEG/lib/NangateOpenCellLibrary_typical_scan.lib 
-liberty_parser version 2.1
-reading /data5/hwx1340340/PartialScanCases/JPEG/lib/NangateOpenCellLibrary_typical_scan.lib...
-... Done. 
-Elapsed time= 0 seconds
-//  Warning: Cell 'CLKGATE_X1' is clock_gating_integrated_cell but is missing required pin attributes.
-//           Inputs clock_gate_test_pin are missing
-//           Will not populate this cell for use in tessent shell for test logic.
-//  Warning: Cell 'CLKGATE_X2' is clock_gating_integrated_cell but is missing required pin attributes.
-//           Inputs clock_gate_test_pin are missing
-//           Will not populate this cell for use in tessent shell for test logic.
-//  Warning: Cell 'CLKGATE_X4' is clock_gating_integrated_cell but is missing required pin attributes.
-//           Inputs clock_gate_test_pin are missing
-//           Will not populate this cell for use in tessent shell for test logic.
-//  Warning: Cell 'CLKGATE_X8' is clock_gating_integrated_cell but is missing required pin attributes.
-//           Inputs clock_gate_test_pin are missing
-//           Will not populate this cell for use in tessent shell for test logic.
-//  sub-command: read_verilog /data5/hwx1340340/PartialScanCases/JPEG/netlist/jpeg_full_scan.v 
-//  sub-command: set_current_design jpeg_encoder 
-//  Warning:  No match for Liberty Cell names which follow.
-//    As a result, none of their cell or pin attributes were used.
-//     All cell names that follow are from Liberty file '/data5/hwx1340340/PartialScanCases/JPEG/lib/NangateOpenCellLibrary_typical_scan.lib'.
-//      'AND2_X4' on line 760.
-//      'AND3_X2' on line 1318.
-//      'AND3_X4' on line 1649.
-//      'AND4_X2' on line 2431.
-//      'AND4_X4' on line 2882.
-//      'ANTENNA_X1' on line 3333.
-//      'AOI211_X1' on line 8259.
-//      'AOI211_X2' on line 9046.
-//      'AOI211_X4' on line 9833.
-//      'AOI221_X1' on line 10620.
-//      'AOI221_X2' on line 12555.
-//      'AOI221_X4' on line 14490.
-//      'AOI222_X1' on line 16425.
-//      'AOI222_X2' on line 21204.
-//      'AOI222_X4' on line 25983.
-//      'AOI22_X2' on line 6013.
-//      'AOI22_X4' on line 7136.
-//      'BUF_X32' on line 31417.
-//      'CLKBUF_X3' on line 31810.
-//      'CLKGATETST_X1' on line 31941.
-//      'CLKGATETST_X2' on line 32695.
-//      'CLKGATETST_X4' on line 33449.
-//      'CLKGATETST_X8' on line 34203.
-//      'CLKGATE_X1' on line 34957.
-//      'CLKGATE_X2' on line 35309.
-//      'CLKGATE_X4' on line 35661.
-//      'CLKGATE_X8' on line 36013.
-//      'DFFRS_X1' on line 36365.
-//      'DFFRS_X2' on line 38753.
-//      'DFFR_X2' on line 42176.
-//      'DFFS_X2' on line 44246.
-//      'DFF_X2' on line 45711.
-//      'DLH_X1' on line 46141.
-//      'DLH_X2' on line 46493.
-//      'DLL_X1' on line 46845.
-//      'DLL_X2' on line 47197.
-//      'FILLCELL_X1' on line 49131.
-//      'FILLCELL_X16' on line 49261.
-//      'FILLCELL_X2' on line 49183.
-//      'FILLCELL_X32' on line 49287.
-//      'FILLCELL_X4' on line 49209.
-//      'FILLCELL_X8' on line 49235.
-//      'INV_X16' on line 50401.
-//      'INV_X32' on line 50532.
-//      'LOGIC1_X1' on line 50697.
-//      'NAND3_X4' on line 53252.
-//      'NAND4_X2' on line 54034.
-//      'NAND4_X4' on line 54485.
-//      'NOR3_X2' on line 55948.
-//      'NOR4_X4' on line 57512.
-//      'OAI211_X1' on line 66624.
-//      'OAI211_X4' on line 68198.
-//      'OAI21_X4' on line 58961.
-//      'OAI221_X2' on line 70920.
-//      'OAI221_X4' on line 72855.
-//      'OAI222_X1' on line 74790.
-//      'OAI222_X2' on line 79569.
-//      'OAI222_X4' on line 84348.
-//      'OAI22_X2' on line 60583.
-//      'OAI33_X1' on line 62829.
-//      'OR2_X2' on line 89354.
-//      'OR2_X4' on line 89581.
-//      'OR3_X4' on line 90470.
-//      'OR4_X1' on line 90801.
-//      'OR4_X2' on line 91252.
-//      'OR4_X4' on line 91703.
-//      'SDFFRS_X1' on line 92154.
-//      'SDFFRS_X2' on line 101489.
-//      'SDFFR_X2' on line 114806.
-//      'SDFFS_X2' on line 122770.
-//      'SDFF_X2' on line 128231.
-//      'TBUF_X1' on line 129710.
-//      'TBUF_X16' on line 130718.
-//      'TBUF_X2' on line 129962.
-//      'TBUF_X4' on line 130214.
-//      'TBUF_X8' on line 130466.
-//      'TINV_X1' on line 130970.
-//      'TLAT_X1' on line 131222.
-//      'XNOR2_X2' on line 132252.
-//      'XOR2_X2' on line 133050.
-//  sub-command: add_clocks 0 clk 
-//  sub-command: add_clocks 1 rst 
-//  sub-command: add_scan_groups group1 /data5/hwx1340340/PartialScanCases/JPEG/scr/jpeg.proc 
-//  sub-command: add_scan_chains 1 group1 scan_in_0 douten 
-//  sub-command: add_scan_chains 2 group1 scan_in_1 scan_out_1 
-//  sub-command: add_scan_chains 3 group1 scan_in_2 scan_out_2 
-//  sub-command: add_scan_chains 4 group1 scan_in_3 scan_out_3 
-//  sub-command: add_scan_chains 5 group1 scan_in_4 scan_out_4 
-//  sub-command: add_scan_chains 6 group1 scan_in_5 scan_out_5 
-//  sub-command: add_scan_chains 7 group1 scan_in_6 scan_out_6 
-//  sub-command: add_scan_chains 8 group1 scan_in_7 scan_out_7 
-//  sub-command: add_scan_chains 9 group1 scan_in_8 scan_out_8 
-//  sub-command: add_scan_chains 10 group1 scan_in_9 scan_out_9 
-//  sub-command: add_scan_chains 11 group1 scan_in_10 scan_out_10 
-//  sub-command: add_scan_chains 12 group1 scan_in_11 scan_out_11 
-//  sub-command: add_scan_chains 13 group1 scan_in_12 scan_out_12 
-//  sub-command: add_scan_chains 14 group1 scan_in_13 scan_out_13 
-//  sub-command: add_scan_chains 15 group1 scan_in_14 scan_out_14 
-//  sub-command: add_scan_chains 16 group1 scan_in_15 scan_out_15 
-//  sub-command: add_scan_chains 17 group1 scan_in_16 scan_out_16 
-//  sub-command: add_scan_chains 18 group1 scan_in_17 scan_out_17 
-//  sub-command: add_scan_chains 19 group1 scan_in_18 scan_out_18 
-//  sub-command: add_scan_chains 20 group1 scan_in_19 scan_out_19 
-//  sub-command: add_scan_chains 21 group1 scan_in_20 scan_out_20 
-//  sub-command: add_scan_chains 22 group1 scan_in_21 scan_out_21 
-//  sub-command: add_scan_chains 23 group1 scan_in_22 scan_out_22 
-//  sub-command: add_scan_chains 24 group1 scan_in_23 scan_out_23 
-//  sub-command: add_scan_chains 25 group1 scan_in_24 scan_out_24 
-//  sub-command: add_scan_chains 26 group1 scan_in_25 scan_out_25 
-//  sub-command: add_scan_chains 27 group1 scan_in_26 scan_out_26 
-//  sub-command: add_scan_chains 28 group1 scan_in_27 scan_out_27 
-//  sub-command: add_scan_chains 29 group1 scan_in_28 scan_out_28 
-//  sub-command: add_scan_chains 30 group1 scan_in_29 scan_out_29 
-//  sub-command: add_scan_chains 31 group1 scan_in_30 scan_out_30 
-//  sub-command: add_scan_chains 32 group1 scan_in_31 scan_out_31 
-//  sub-command: add_scan_chains 33 group1 scan_in_32 scan_out_32 
-//  sub-command: add_scan_chains 34 group1 scan_in_33 scan_out_33 
-//  sub-command: add_scan_chains 35 group1 scan_in_34 scan_out_34 
-//  sub-command: add_scan_chains 36 group1 scan_in_35 scan_out_35 
-//  sub-command: add_scan_chains 37 group1 scan_in_36 scan_out_36 
-//  sub-command: add_scan_chains 38 group1 scan_in_37 scan_out_37 
-//  sub-command: add_scan_chains 39 group1 scan_in_38 scan_out_38 
-//  sub-command: add_scan_chains 40 group1 scan_in_39 scan_out_39 
-//  sub-command: add_scan_chains 41 group1 scan_in_40 scan_out_40 
-//  sub-command: add_scan_chains 42 group1 scan_in_41 scan_out_41 
-//  sub-command: add_scan_chains 43 group1 scan_in_42 scan_out_42 
-//  sub-command: add_scan_chains 44 group1 scan_in_43 scan_out_43 
-//  sub-command: set_clock_off_simulation off 
-//  sub-command: set_pattern_type -sequential 7 -multiple_load on 
-//  Settings : -RAM_sequential OFF
-//             -SEQuential     7
-//             -MULtiple_load  ON
-//             -CLOck_po       ON
-//  sub-command: set_split_capture_cycle on 
-//  sub-command: set_system_mode analysis 
-//  Flattening process completed, cell instances=56975, gates=130677, PIs=65, POs=70, CPU time=0.45 sec.
-//  ---------------------------------------------------------------------------
-//  Begin circuit learning analyses.
-//  --------------------------------
-//  Learning completed, CPU time=0.71 sec.
-//  ---------------------------------------------------------------------------
-//  Begin scan chain identification process, memory elements = 4384.
-//  ---------------------------------------------------------------------------
-//  Reading group test procedure file /data5/hwx1340340/PartialScanCases/JPEG/scr/jpeg.proc.
-//  Simulating load/unload procedure in group1 test procedure file.
-//  Chain = 1 successfully traced with scan_cells = 100.
-//  Chain = 2 successfully traced with scan_cells = 100.
-//  Chain = 3 successfully traced with scan_cells = 100.
-//  Chain = 4 successfully traced with scan_cells = 100.
-//  Chain = 5 successfully traced with scan_cells = 100.
-//  Chain = 6 successfully traced with scan_cells = 100.
-//  Chain = 7 successfully traced with scan_cells = 100.
-//  Chain = 8 successfully traced with scan_cells = 100.
-//  Chain = 9 successfully traced with scan_cells = 100.
-//  Chain = 10 successfully traced with scan_cells = 100.
-//  Chain = 11 successfully traced with scan_cells = 100.
-//  Chain = 12 successfully traced with scan_cells = 100.
-//  Chain = 13 successfully traced with scan_cells = 100.
-//  Chain = 14 successfully traced with scan_cells = 100.
-//  Chain = 15 successfully traced with scan_cells = 100.
-//  Chain = 16 successfully traced with scan_cells = 100.
-//  Chain = 17 successfully traced with scan_cells = 100.
-//  Chain = 18 successfully traced with scan_cells = 100.
-//  Chain = 19 successfully traced with scan_cells = 100.
-//  Chain = 20 successfully traced with scan_cells = 100.
-//  Chain = 21 successfully traced with scan_cells = 100.
-//  Chain = 22 successfully traced with scan_cells = 100.
-//  Chain = 23 successfully traced with scan_cells = 100.
-//  Chain = 24 successfully traced with scan_cells = 100.
-//  Chain = 25 successfully traced with scan_cells = 100.
-//  Chain = 26 successfully traced with scan_cells = 100.
-//  Chain = 27 successfully traced with scan_cells = 100.
-//  Chain = 28 successfully traced with scan_cells = 100.
-//  Chain = 29 successfully traced with scan_cells = 100.
-//  Chain = 30 successfully traced with scan_cells = 100.
-//  Chain = 31 successfully traced with scan_cells = 100.
-//  Chain = 32 successfully traced with scan_cells = 100.
-//  Chain = 33 successfully traced with scan_cells = 100.
-//  Chain = 34 successfully traced with scan_cells = 100.
-//  Chain = 35 successfully traced with scan_cells = 100.
-//  Chain = 36 successfully traced with scan_cells = 100.
-//  Chain = 37 successfully traced with scan_cells = 100.
-//  Chain = 38 successfully traced with scan_cells = 100.
-//  Chain = 39 successfully traced with scan_cells = 84.
-//  Chain = 40 successfully traced with scan_cells = 100.
-//  Chain = 41 successfully traced with scan_cells = 100.
-//  Chain = 42 successfully traced with scan_cells = 100.
-//  Chain = 43 successfully traced with scan_cells = 100.
-//  Chain = 44 successfully traced with scan_cells = 100.
-//  4384 scan cells have been identified in 44 scan chains.
-//  Longest scan chain has 100 scan cells.
-//  ---------------------------------------------------------------------------
-//  Begin scan clock rules checking.
-//  ---------------------------------------------------------------------------
-//  2 scan clock/set/reset lines have been identified.
-//  All scan clocks successfully passed off-state check.
-//  Capture clock is set to clk.
-//  largest sequential test depth = 0, largest controllability depth = 0, largest observability depth = 0
-//  sub-command: report_scan_chains 
-chain = 1   group = group1  input = '/scan_in_0'  output = '/douten'  length = 100
-chain = 2   group = group1  input = '/scan_in_1'  output = '/scan_out_1'  length = 100
-chain = 3   group = group1  input = '/scan_in_2'  output = '/scan_out_2'  length = 100
-chain = 4   group = group1  input = '/scan_in_3'  output = '/scan_out_3'  length = 100
-chain = 5   group = group1  input = '/scan_in_4'  output = '/scan_out_4'  length = 100
-chain = 6   group = group1  input = '/scan_in_5'  output = '/scan_out_5'  length = 100
-chain = 7   group = group1  input = '/scan_in_6'  output = '/scan_out_6'  length = 100
-chain = 8   group = group1  input = '/scan_in_7'  output = '/scan_out_7'  length = 100
-chain = 9   group = group1  input = '/scan_in_8'  output = '/scan_out_8'  length = 100
-chain = 10   group = group1  input = '/scan_in_9'  output = '/scan_out_9'  length = 100
-chain = 11   group = group1  input = '/scan_in_10'  output = '/scan_out_10'  length = 100
-chain = 12   group = group1  input = '/scan_in_11'  output = '/scan_out_11'  length = 100
-chain = 13   group = group1  input = '/scan_in_12'  output = '/scan_out_12'  length = 100
-chain = 14   group = group1  input = '/scan_in_13'  output = '/scan_out_13'  length = 100
-chain = 15   group = group1  input = '/scan_in_14'  output = '/scan_out_14'  length = 100
-chain = 16   group = group1  input = '/scan_in_15'  output = '/scan_out_15'  length = 100
-chain = 17   group = group1  input = '/scan_in_16'  output = '/scan_out_16'  length = 100
-chain = 18   group = group1  input = '/scan_in_17'  output = '/scan_out_17'  length = 100
-chain = 19   group = group1  input = '/scan_in_18'  output = '/scan_out_18'  length = 100
-chain = 20   group = group1  input = '/scan_in_19'  output = '/scan_out_19'  length = 100
-chain = 21   group = group1  input = '/scan_in_20'  output = '/scan_out_20'  length = 100
-chain = 22   group = group1  input = '/scan_in_21'  output = '/scan_out_21'  length = 100
-chain = 23   group = group1  input = '/scan_in_22'  output = '/scan_out_22'  length = 100
-chain = 24   group = group1  input = '/scan_in_23'  output = '/scan_out_23'  length = 100
-chain = 25   group = group1  input = '/scan_in_24'  output = '/scan_out_24'  length = 100
-chain = 26   group = group1  input = '/scan_in_25'  output = '/scan_out_25'  length = 100
-chain = 27   group = group1  input = '/scan_in_26'  output = '/scan_out_26'  length = 100
-chain = 28   group = group1  input = '/scan_in_27'  output = '/scan_out_27'  length = 100
-chain = 29   group = group1  input = '/scan_in_28'  output = '/scan_out_28'  length = 100
-chain = 30   group = group1  input = '/scan_in_29'  output = '/scan_out_29'  length = 100
-chain = 31   group = group1  input = '/scan_in_30'  output = '/scan_out_30'  length = 100
-chain = 32   group = group1  input = '/scan_in_31'  output = '/scan_out_31'  length = 100
-chain = 33   group = group1  input = '/scan_in_32'  output = '/scan_out_32'  length = 100
-chain = 34   group = group1  input = '/scan_in_33'  output = '/scan_out_33'  length = 100
-chain = 35   group = group1  input = '/scan_in_34'  output = '/scan_out_34'  length = 100
-chain = 36   group = group1  input = '/scan_in_35'  output = '/scan_out_35'  length = 100
-chain = 37   group = group1  input = '/scan_in_36'  output = '/scan_out_36'  length = 100
-chain = 38   group = group1  input = '/scan_in_37'  output = '/scan_out_37'  length = 100
-chain = 39   group = group1  input = '/scan_in_38'  output = '/scan_out_38'  length = 84
-chain = 40   group = group1  input = '/scan_in_39'  output = '/scan_out_39'  length = 100
-chain = 41   group = group1  input = '/scan_in_40'  output = '/scan_out_40'  length = 100
-chain = 42   group = group1  input = '/scan_in_41'  output = '/scan_out_41'  length = 100
-chain = 43   group = group1  input = '/scan_in_42'  output = '/scan_out_42'  length = 100
-chain = 44   group = group1  input = '/scan_in_43'  output = '/scan_out_43'  length = 100
-//  sub-command: report_statistics 
-//  Warning: no faults have been added.
-         Statistics Report        
-          Stuck-at Faults         
-----------------------------------
-Fault Classes           #faults   
-                        (total)   
--------------------  -------------
-  FU (full)                0      
-  -----------------  -------------
-----------------------------------
-Coverage                          
-  -----------------               
-----------------------------------
-#test_patterns                  0 
-#simulated_patterns             0 
-CPU_time (secs)               6.1 
-----------------------------------
-
-JPEG_CHECK_COMPLETE: review all 44 chains / 4384 scan cells and DRC before ATPG.
-//  command: exit -force
+set extral_scan_false_se {
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_iter_ctrl/iter_hf_over_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/c_s_wr_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/data_cnt_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/datain_wren_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/tc_cblkin_full_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p2/data_cnt_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p2/datain_wren_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p2/tc_cblkin_full_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/data_cnt_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/datain_wren_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/tc_cblkin_full_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/data_cnt_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/datain_wren_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/tc_cblkin_full_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/data_cnt_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/datain_wren_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/tc_cblkin_full_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_s/tc_cblkin_full_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_cnt_en_1d_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/intl_addr_en_1d_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/c_sel_reg_1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_1_p_cnt_reg_0/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_1_p_cnt_reg_0/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/stage1_end_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ribb/U_tubo_ribb_ctrl/cur_state_reg_1_cur_state_reg_0/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ribb/U_tubo_ribb_ctrl/cur_state_reg_1_cur_state_reg_0/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/hd_d_end_reg/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/ram_index_reg_1_ram_index_reg_0/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/ram_index_reg_1_ram_index_reg_0/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_0/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U4/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U1/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U2/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U3/SE
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U4/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U2/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U3/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U4/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_2_acu_tmp1_out0_reg_1/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_2_acu_tmp1_out0_reg_1/U2/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U2/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U3/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U4/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out4_reg_10_acu_tmp1_out4_reg_9_acu_tmp1_out4_reg_8_acu_tmp1_out4_reg_7/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out6_reg_10_acu_tmp1_out6_reg_9_acu_tmp1_out6_reg_8_acu_tmp1_out6_reg_7/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U2/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U3/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U4/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_2_bcu_tmp1_out0_reg_1/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_2_bcu_tmp1_out0_reg_1/U2/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U2/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U3/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U4/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out3_reg_10_bcu_tmp1_out3_reg_9_bcu_tmp1_out3_reg_8_bcu_tmp1_out3_reg_7/U1/SE
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out3_reg_10_bcu_tmp1_out3_reg_9_bcu_tmp1_out3_reg_8_bcu_tmp1_out3_reg_7/U2/SE
+}
+set extral_scan_false_si {
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_iter_ctrl/iter_hf_over_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/c_s_wr_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/data_cnt_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/datain_wren_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p1/tc_cblkin_full_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p2/data_cnt_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p2/datain_wren_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_p2/tc_cblkin_full_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/data_cnt_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/datain_wren_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pa/u_tubo_llr_sp_s/tc_cblkin_full_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/data_cnt_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/datain_wren_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p1/tc_cblkin_full_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/data_cnt_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/data_cnt_reg_4_data_cnt_reg_3_data_cnt_reg_2_data_cnt_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/datain_wren_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_p2/tc_cblkin_full_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ctrl/u_tubo_llr_ctrl/u_tubo_llr_pipa_pi/u_tubo_llr_sp_s/tc_cblkin_full_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_cnt_en_1d_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_12_addr_reg_11_addr_reg_10_addr_reg_9/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_4_addr_reg_3_addr_reg_2_addr_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/addr_reg_8_addr_reg_7_addr_reg_6_addr_reg_5/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_addr_cal/intl_addr_en_1d_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/c_sel_reg_1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_1_p_cnt_reg_0/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_1_p_cnt_reg_0/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/p_cnt_reg_5_p_cnt_reg_4_p_cnt_reg_3_p_cnt_reg_2/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_intl/u_tubo_intl_p_cal/stage1_end_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ribb/U_tubo_ribb_ctrl/cur_state_reg_1_cur_state_reg_0/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_ribb/U_tubo_ribb_ctrl/cur_state_reg_1_cur_state_reg_0/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/hd_d_end_reg/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_12_input_raddr_reg_11_input_raddr_reg_10_input_raddr_reg_9/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_4_input_raddr_reg_3_input_raddr_reg_2_input_raddr_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/input_raddr_reg_8_input_raddr_reg_7_input_raddr_reg_6_input_raddr_reg_5/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/ram_index_reg_1_ram_index_reg_0/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/ram_index_reg_1_ram_index_reg_0/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_0/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_12_relative_addr_reg_11_relative_addr_reg_10_relative_addr_reg_9/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_4_relative_addr_reg_3_relative_addr_reg_2_relative_addr_reg_1/U4/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U1/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U2/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U3/SI
+/U_TUBO_TOP/U_tubo/TUBO_3G_U_tubo_umts/u_tubo_umts_term/relative_addr_reg_8_relative_addr_reg_7_relative_addr_reg_6_relative_addr_reg_5/U4/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U2/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U3/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_10_acu_tmp1_out0_reg_9_acu_tmp1_out0_reg_8_acu_tmp1_out0_reg_7/U4/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_2_acu_tmp1_out0_reg_1/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_2_acu_tmp1_out0_reg_1/U2/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U2/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U3/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out0_reg_6_acu_tmp1_out0_reg_5_acu_tmp1_out0_reg_4_acu_tmp1_out0_reg_3/U4/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out4_reg_10_acu_tmp1_out4_reg_9_acu_tmp1_out4_reg_8_acu_tmp1_out4_reg_7/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_alpha_calc/acu_tmp1_out6_reg_10_acu_tmp1_out6_reg_9_acu_tmp1_out6_reg_8_acu_tmp1_out6_reg_7/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U2/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U3/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_10_bcu_tmp1_out0_reg_9_bcu_tmp1_out0_reg_8_bcu_tmp1_out0_reg_7/U4/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_2_bcu_tmp1_out0_reg_1/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_2_bcu_tmp1_out0_reg_1/U2/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U2/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U3/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out0_reg_6_bcu_tmp1_out0_reg_5_bcu_tmp1_out0_reg_4_bcu_tmp1_out0_reg_3/U4/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out3_reg_10_bcu_tmp1_out3_reg_9_bcu_tmp1_out3_reg_8_bcu_tmp1_out3_reg_7/U1/SI
+/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_siso/PPU_0_U_beta_calc/bcu_tmp1_out3_reg_10_bcu_tmp1_out3_reg_9_bcu_tmp1_out3_reg_8_bcu_tmp1_out3_reg_7/U2/SI
+}
