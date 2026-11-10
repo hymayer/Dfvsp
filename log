@@ -1,194 +1,37 @@
 #!/usr/bin/env python3
-"""Audit classified fault lists; Python 3.9+, standard library only."""
-import argparse
-import csv
-import fnmatch
-import hashlib
-import json
-import re
-import sys
-from collections import Counter
-from decimal import Decimal, localcontext
+"""Regression for actual Tessent quoted escaped-identifier report spelling."""
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from fault_report import norm, parse_fault_line
-
-
-def load_faults(path, skip_regex=None):
-    faults = {}
-    duplicates = skipped = 0
-    digest = hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for number, raw in enumerate(stream, 1):
-            digest.update(raw)
-            line = raw.decode('utf-8-sig').strip()
-            if not line or line.startswith(('#', '//')):
-                continue
-            if skip_regex and skip_regex.fullmatch(line):
-                skipped += 1
-                continue
-            try:fields = parse_fault_line(line)
-            except ValueError as exc:raise ValueError('{}:{}: {}'.format(path,number,exc))
-            if fields is None:continue
-            value, classification, pin = fields
-            key = (value, norm(pin))
-            if key in faults:
-                if faults[key] != classification:
-                    raise ValueError(f'{path}:{number}: conflicting duplicate key {key}')
-                duplicates += 1
-            faults[key] = classification
-    if not faults:
-        raise ValueError(f'{path}: no fault records')
-    return faults, {'path': str(Path(path).resolve()), 'sha256': digest.hexdigest(),
-                    'unique_keys': len(faults), 'identical_duplicates': duplicates,
-                    'explicitly_skipped_lines': skipped}
-
-
-def matches(classification, patterns):
-    return any(fnmatch.fnmatchcase(classification, pattern) for pattern in patterns)
-
-
-def percent(numerator, denominator):
-    if not denominator:
-        return None
-    with localcontext() as ctx:
-        ctx.prec = 40
-        return format(Decimal(numerator) * 100 / Decimal(denominator), '.12f')
-
-
-def write_csv(path, header, rows):
-    with path.open('w', newline='', encoding='utf-8') as stream:
-        writer = csv.writer(stream)
-        writer.writerow(header)
-        writer.writerows(rows)
-
-
-def audit(fs_path, ffps_path, output, detected_patterns, skip_regex=None):
-    fs, fs_meta = load_faults(fs_path, skip_regex)
-    ffps, ffps_meta = load_faults(ffps_path, skip_regex)
-    fs_keys, ffps_keys = set(fs), set(ffps)
-    common = fs_keys & ffps_keys
-    fs_only, ffps_only = fs_keys - ffps_keys, ffps_keys - fs_keys
-    fs_detected = {key for key, cls in fs.items() if matches(cls, detected_patterns)}
-    ffps_detected = {key for key, cls in ffps.items() if matches(cls, detected_patterns)}
-    lost = (fs_detected & common) - ffps_detected
-    gained = (ffps_detected & common) - fs_detected
-    both = fs_detected & ffps_detected
-    missing_detected = fs_detected & fs_only
-    changed = {key for key in common if fs[key] != ffps[key]}
-    notes = [
-        'Counts are unique exported keys, not collapsed-fault weights.',
-        'Detected/key percentages are diagnostic ratios, NOT tool test coverage.',
-        'Equal keys do not prove equivalent physical fault definitions; verify export settings.',
-        'Input completeness and detected-class semantics must be verified externally.',
-    ]
-    if fs_only or ffps_only:
-        notes.append('Fault universes differ: missing keys are not counted as lost/gained.')
-    if not fs_detected or not ffps_detected:
-        notes.append('A side has zero detected keys: check class patterns and report completeness.')
-    if fs_meta['identical_duplicates'] or ffps_meta['identical_duplicates']:
-        notes.append('Identical duplicates were deduplicated; check key uniqueness/export format.')
-    result = {
-        'detected_class_patterns': detected_patterns,
-        'fs': {**fs_meta, 'class_counts': dict(sorted(Counter(fs.values()).items())),
-               'detected_keys': len(fs_detected),
-               'detected_keys_over_all_exported_keys_pct': percent(len(fs_detected), len(fs))},
-        'ffps': {**ffps_meta, 'class_counts': dict(sorted(Counter(ffps.values()).items())),
-                 'detected_keys': len(ffps_detected),
-                 'detected_keys_over_all_exported_keys_pct': percent(len(ffps_detected), len(ffps))},
-        'comparison': {
-            'same_exported_key_universe': fs_keys == ffps_keys,
-            'common_keys': len(common), 'fs_only': len(fs_only), 'ffps_only': len(ffps_only),
-            'lost_detected_on_common_keys': len(lost),
-            'gained_detected_on_common_keys': len(gained),
-            'common_detected': len(both), 'fs_detected_missing_in_ffps': len(missing_detected),
-            'classification_changed_on_common_keys': len(changed),
-            'all_fs_detected_keys_present_and_detected_in_ffps': fs_detected <= ffps_detected,
-        },
-        'notes': notes,
-    }
-    output = Path(output)
-    output.mkdir(parents=True, exist_ok=True)
-    # Summary is written last: its presence indicates completed output generation.
-    groups = {'lost': lost, 'gained': gained, 'fs_only': fs_only,
-              'ffps_only': ffps_only, 'changed': changed,
-              'fs_detected_missing': missing_detected}
-    for name, keys in groups.items():
-        write_csv(output / f'{name}.csv', ['value', 'pin', 'fs_class', 'ffps_class'],
-                  ((v, p, fs.get((v, p), ''), ffps.get((v, p), '')) for v, p in sorted(keys)))
-    transitions = Counter((fs[key], ffps[key]) for key in common)
-    write_csv(output / 'transitions.csv', ['fs_class', 'ffps_class', 'count'],
-              ((a, b, n) for (a, b), n in sorted(transitions.items())))
-    classes = sorted(set(fs.values()) | set(ffps.values()))
-    a, b = Counter(fs.values()), Counter(ffps.values())
-    write_csv(output / 'class_counts.csv', ['class', 'fs_count', 'ffps_count', 'delta'],
-              ((cls, a[cls], b[cls], b[cls] - a[cls]) for cls in classes))
-    (output / 'summary.json').write_text(json.dumps(result, indent=2, ensure_ascii=False) + '\n',
-                                       encoding='utf-8')
-    return result
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument('--fs', type=Path, help='full-scan complete classified list')
-    source.add_argument('--manifest', type=Path, help='CSV columns: case,model,fs,ffps')
-    parser.add_argument('--ffps', type=Path)
-    parser.add_argument('--out', type=Path, required=True, help='new output directory')
-    parser.add_argument('--detected', required=True,
-                        help='comma-separated, case-sensitive class patterns, e.g. DT,DT.*')
-    parser.add_argument('--skip-line-regex', help='explicit regex fullmatch for known header lines')
-    args = parser.parse_args()
-    try:
-        patterns = [p.strip() for p in args.detected.split(',') if p.strip()]
-        if not patterns:
-            raise ValueError('--detected must contain at least one class pattern')
-        skip = re.compile(args.skip_line_regex) if args.skip_line_regex else None
-        if args.out.exists():
-            raise ValueError(f'output already exists; choose a new directory: {args.out}')
-        if args.fs:
-            if not args.ffps:
-                raise ValueError('--fs requires --ffps')
-            jobs = [('single', '', args.fs.resolve(), args.ffps.resolve(), args.out)]
-        else:
-            if args.ffps:
-                raise ValueError('--ffps cannot be combined with --manifest')
-            jobs, seen = [], set()
-            with args.manifest.open(newline='', encoding='utf-8-sig') as stream:
-                reader = csv.DictReader(stream)
-                if not {'case', 'model', 'fs', 'ffps'} <= set(reader.fieldnames or []):
-                    raise ValueError('manifest requires case,model,fs,ffps columns')
-                for row in reader:
-                    case, model = row['case'], row['model']
-                    if not all(re.fullmatch(r'[A-Za-z0-9_-]+', x) for x in (case, model)):
-                        raise ValueError('case/model must use letters, digits, underscore or hyphen')
-                    if (case, model) in seen:
-                        raise ValueError(f'duplicate case/model: {case}/{model}')
-                    seen.add((case, model))
-                    paths = [(args.manifest.parent / row[x]).resolve() for x in ('fs', 'ffps')]
-                    jobs.append((case, model, *paths, args.out / case / model))
-            if not jobs:
-                raise ValueError('empty manifest')
-        for _, _, fs, ffps, _ in jobs:
-            if not fs.is_file() or not ffps.is_file():
-                raise ValueError(f'missing input file: {fs} or {ffps}')
-        rows = []
-        for case, model, fs, ffps, out in jobs:
-            result = audit(fs, ffps, out, patterns, skip)
-            cmp = result['comparison']
-            rows.append({'case': case, 'model': model,
-                         'fs_keys': result['fs']['unique_keys'],
-                         'ffps_keys': result['ffps']['unique_keys'], **cmp})
-            print(f'{case} {model}: lost={cmp["lost_detected_on_common_keys"]}, '
-                  f'gained={cmp["gained_detected_on_common_keys"]}, '
-                  f'FS-only={cmp["fs_only"]}, FFPS-only={cmp["ffps_only"]}')
-        write_csv(args.out / 'overview.csv', list(rows[0]), (row.values() for row in rows))
-        print(f'Output: {args.out.resolve()}')
-    except (ValueError, OSError, UnicodeError, re.error) as exc:
-        print(f'ERROR: {exc}', file=sys.stderr)
-        return 2
-    return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main())
+import json
+import subprocess
+import sys
+import tempfile
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+from fault_report import norm,parse_fault_line
+from run_ffps import faults,new_problem_sites,association
+sample=r'''0   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
+1   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
+0   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
+1   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
+'''
+assert parse_fault_line(sample.splitlines()[0])[2]==r'"/\dfdct_dout[0]$_DFFE_PP_ /Q"'
+assert norm(parse_fault_line(sample.splitlines()[0])[2])=='dfdct_dout[0]$_DFFE_PP_/Q'
+assert norm(r'/dfdct_dout\[0\]$_DFFE_PP_/Q')==norm(r'"/\dfdct_dout[0]$_DFFE_PP_ /Q"')
+for bad in ['0 DS "unterminated','0 DS /two tokens','0 DS','2 DS /pin']:
+    try:parse_fault_line(bad)
+    except ValueError:pass
+    else:raise AssertionError('Malformed line accepted: '+bad)
+with tempfile.TemporaryDirectory() as d:
+    p=Path(d);report=p/'quoted.report';report.write_text(sample)
+    actual=faults(report);assert len(actual)==4
+    canonical=p/'canonical.report';canonical.write_text(sample.replace('"/\\','/').replace(' /Q"','/Q').replace(' /QN"','/QN'))
+    assert faults(canonical)==actual
+    changed=dict(actual);changed[('0','dfdct_dout[0]$_DFFE_PP_/QN')]='AU.PC'
+    assert new_problem_sites(actual,changed)=={'dfdct_dout[0]$_DFFE_PP_/QN'}
+    names=(ROOT/'data/candidates.txt').read_text().splitlines();catalog=p/'catalog.log'
+    catalog.write_text(''.join('Target: '+n+'\n/dfdct_dout[0]$_DFFE_PP_/QN\n' for n in names))
+    subprocess.run([sys.executable,'-B',str(ROOT/'ffps/bind_fault_sites.py'),'--catalog',str(catalog),'--report',str(report),'--out',str(p/'bound')],check=True)
+    groups=association(p/'bound/cell2Fault.log',names)
+    assert len(groups)==44 and all(v=={'dfdct_dout[0]$_DFFE_PP_/QN'} for v in groups.values())
+    subprocess.run([sys.executable,'-B',str(ROOT/'tools/compare_coverage.py'),'--fs',str(report),'--ffps',str(canonical),'--detected','DS,DS.*','--out',str(p/'audit')],check=True)
+print('QUOTED_ESCAPED_SITE_PARSER_BINDING_AND_COMPARISON_PASS; real ATPG not run')
