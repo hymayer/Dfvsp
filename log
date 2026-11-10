@@ -1,4 +1,24 @@
-pwd
-ls -l run_atpg.py run_full_scan.py
-cat config.json
-grep -nE 'FULL_SCAN|Full-Scan failed|RUN_DIRECTORY|command=' run_atpg.py run_full_scan.py
+weimingv200-4:/data5/hwx1340340>ls -l run_atpg.py run_full_scan.py
+-rw-r----- 1 hwx1340340 weimingv200 8164 Nov 10 16:09 run_atpg.py
+-rw-r----- 1 hwx1340340 weimingv200 3168 Nov 10 16:09 run_full_scan.py
+weimingv200-4:/data5/hwx1340340>cat config.json
+{
+    "tessent_command": ["tessent", "-shell"],
+    "cell_libraries": ["lib/Nangate45_JPEG_generated.tcelllib"],
+    "read_liberty_attributes": true,
+    "abort_limits": [30, 300, 300, 300],
+    "sequential_depth": 7,
+    "processors": 0
+}
+weimingv200-4:/data5/hwx1340340>grep -nE 'FULL_SCAN|Full-Scan failed|RUN_DIRECTORY|command=' run_atpg.py run_full_scan.py
+run_atpg.py:113:     command=cmd+['-dofile',str(ROOT/'scr/jpeg_atpg.dofile'),'-logfile',str(out/'tessent.log'),'-replace']
+run_atpg.py:122:     print('RUN_DIRECTORY',out,flush=True);print('CONSOLE_LOG',out,'/console.log',flush=True)
+run_full_scan.py:34:         print('REUSE_FULL_SCAN',model,flush=True);continue
+run_full_scan.py:36:         command=[sys.executable,'-B',str(ROOT/'run_atpg.py'),'--config',str(Path(args.config).resolve()),'run','--model',model,'--stage','atpg']
+run_full_scan.py:37:             print('FULL_SCAN',model,'log',launcher,flush=True)
+run_full_scan.py:39:         if r.returncode:raise ValueError('Full-Scan failed; inspect '+str(launcher))
+run_full_scan.py:40:         paths=re.findall(r'^RUN_DIRECTORY (.+)$',launcher.read_text(errors='replace'),re.M)
+run_full_scan.py:44:             state['status']='FULL_SCAN_REPORTS_FROZEN'
+run_full_scan.py:46:             command=[sys.executable,'-u',str(ROOT/'run_ffps.py'),'--config',str(Path(args.config).resolve()),'--fs-sa',state['runs']['SA']['directory'],'--fs-tr',state['runs']['TR']['directory']]
+run_full_scan.py:47:             print('FULL_SCAN_REPORTS_READY',statefile)
+weimingv200-4:/data5/hwx1340340>
