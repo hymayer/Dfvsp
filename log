@@ -1,24 +1,30 @@
-sed -n '125,140p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report
+"""Strict Tessent basic-report parsing; preserve escaped identifiers literally."""
+import re
 
-sed -n '133p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report | cat -vet
+def site_text(value):
+    s=value.strip()
+    if not s:raise ValueError('Empty fault site')
+    if s.startswith('"'):
+        if len(s)<2 or not s.endswith('"'):raise ValueError('Unclosed quoted fault site')
+        s=s[1:-1]
+    elif s.endswith('"'):raise ValueError('Unmatched quote in fault site')
+    if not s or '"' in s:raise ValueError('Unsupported quote in fault site')
+    return s
 
-weimingv200-4:/data5/hwx1340340>sed -n '125,140p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report
-0   DI.SCAN   /scan_in_41
-1   DI.SCAN   /scan_in_41
-0   DI.SCAN   /scan_in_42
-1   DI.SCAN   /scan_in_42
-0   DI.SCAN   /scan_in_43
-1   DI.SCAN   /scan_in_43
-0   TI      /amp[11]
-1   DS      /amp[11]
-0   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
-1   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
-0   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
-1   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
-0   DI.SCAN   "/\dfdct_dout[10]$_DFFE_PP_ /Q"
-1   DI.SCAN   "/\dfdct_dout[10]$_DFFE_PP_ /Q"
-0   DS      "/\dfdct_dout[10]$_DFFE_PP_ /QN"
-1   DS      "/\dfdct_dout[10]$_DFFE_PP_ /QN"
-weimingv200-4:/data5/hwx1340340>sed -n '133p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report | cat -vet
-0   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"$
-weimingv200-4:/data5/hwx1340340>
+def norm(value):
+    # A Verilog escaped identifier ends at whitespace: /\\reg[0] /Q -> reg[0]/Q.
+    # Existing static catalogs also use bracket escapes (\\[ / \\]). Never use
+    # shlex or Tcl evaluation: both can interpret backslashes/$/brackets.
+    s=site_text(value).lstrip('/').replace('\\','')
+    s=re.sub(r'\s+(?=/|$)','',s)
+    if not s or re.search(r'\s',s):raise ValueError('Unsupported whitespace in fault site: '+repr(value))
+    return s
+
+def parse_fault_line(line):
+    s=line.strip()
+    if not s or s.startswith(('#','//')):return None
+    fields=s.split(None,2)
+    if len(fields)!=3 or fields[0] not in ('0','1') or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_.-]*',fields[1]):
+        raise ValueError('Expected VALUE CLASS SITE: '+s[:180])
+    norm(fields[2])  # validate, but retain the original site spelling for exports
+    return tuple(fields)
