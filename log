@@ -1,2 +1,2 @@
-cat runs/SA_FULL_atpg_20261110_161813_574782/run.json
-tail -n 30 runs/SA_FULL_atpg_20261110_161813_574782/console.log
+PACKAGE_HASHES_OK 37
+STOP: Malformed full report /data5/hwx1340340/PartialScanCases/JPEG_FFPS_fresh_20261110/runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report:133
