@@ -1,3 +1,5 @@
 PACKAGE_HASHES_OK 37
-FULL_SCAN SA log /data5/hwx1340340/PartialScanCases/JPEG_FFPS/full_scan_reference/SA_launcher.log
-STOP: Full-Scan failed; inspect /data5/hwx1340340/PartialScanCases/JPEG_FFPS/full_scan_reference/SA_launcher.log
+RUN_DIRECTORY /data5/hwx1340340/PartialScanCases/JPEG_FFPS/runs/SA_FULL_atpg_20261110_161813_574782
+CONSOLE_LOG /data5/hwx1340340/PartialScanCases/JPEG_FFPS/runs/SA_FULL_atpg_20261110_161813_574782/console.log
+STATUS failed_or_incomplete
+SMALL_RETURN_BUNDLE /data5/hwx1340340/PartialScanCases/JPEG_FFPS/runs/SA_FULL_atpg_20261110_161813_574782_small.tar.gz
