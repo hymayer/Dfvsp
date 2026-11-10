@@ -1,182 +1,64 @@
 #!/usr/bin/env python3
-"""Frozen JPEG FFPS adaptation. Python 3.6+, standard library only."""
+"""Bind structural site spellings to a real full classified Tessent report."""
 import argparse
-from decimal import Decimal
 import hashlib
 import json
+from collections import defaultdict
 from pathlib import Path
-import re
-import subprocess
 import sys
-import time
-import run_atpg
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from fault_report import norm, parse_fault_line
 
-ROOT=Path(__file__).resolve().parent
 
-def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-def save(path,value):
-    tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(value,indent=2)+'\n');tmp.replace(path)
-def faults(path):
-    result={}
-    for i,line in enumerate(Path(path).open(),1):
-        try:f=parse_fault_line(line)
-        except ValueError as exc:raise ValueError('Malformed full report {}:{}: {}'.format(path,i,exc))
-        if f is None:continue
-        key=(f[0],norm(f[2]))
-        if key in result and result[key]!=f[1]:raise ValueError('Conflicting normalized fault key '+repr(key))
-        result[key]=f[1]
-    if not result:raise ValueError('Empty report '+str(path))
-    return result
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
 
-def problematic(cls):return 'AU' in cls or 'UO.AAB' in cls or 'UC.AAB' in cls
-
-def new_problem_sites(reference,partial):
-    return {site for (value,site),cls in partial.items() if problematic(cls) and not problematic(reference.get((value,site),''))}
-
-def coverage(log):
-    matches=re.findall(r'^\s*(?://\s*)?test_coverage\s+([0-9]+(?:\.[0-9]+)?)%',Path(log).read_text(errors='replace'),re.M)
-    if not matches:raise ValueError('No final report_statistics test_coverage found: '+str(log))
-    value=matches[-1]
-    return value
-
-def covers(ref,actual):
-    # Compare only at the precision printed by the Full-Scan report.
-    q=Decimal(1).scaleb(-len(ref.split('.')[1])) if '.' in ref else Decimal(1)
-    return Decimal(actual).quantize(q)>=Decimal(ref)
-
-def association(path,candidates):
-    groups={};current=None
-    for line in Path(path).read_text().splitlines():
-        if line.startswith('Target: '):
-            current=norm(line[8:])
-            if current in groups:raise ValueError('Duplicate association target')
-            groups[current]=set()
-        elif line.strip():
-            if current is None:raise ValueError('Association site before target')
-            groups[current].add(norm(line.strip()))
-    if set(groups)!={norm(n) for n in candidates} or any(not v for v in groups.values()):raise ValueError('Expected 44 nonempty candidate associations')
-    return groups
-
-def filter_cells(cells,groups,sites):return [n for n in cells if not groups[norm(n)]&sites]
-
-def inspect_run(directory,model,selected,cfg,libs):
-    directory=Path(directory).resolve();record=json.loads((directory/'run.json').read_text())
-    if record.get('status')!='commands_completed_review_reports' or record.get('process_returncode')!=0 or not (directory/'COMPLETE').is_file():raise ValueError('Incomplete ATPG run '+str(directory))
-    if not (directory/'COMPLETE').read_text().startswith('ATPG_COMMANDS_COMPLETED model='+model+' '):raise ValueError('Wrong completion marker')
-    if record.get('model')!=model or record.get('stage')!='atpg':raise ValueError('Wrong model/stage '+str(directory))
-    if record.get('netlist_sha256')!=digest(ROOT/'netlist/jpeg_full_scan.v'):raise ValueError('Netlist identity mismatch')
-    if record.get('settings')!=cfg:raise ValueError('ATPG settings mismatch; use fresh matching references')
-    if record.get('cell_library_sha256')!={str(p):digest(p) for p in libs}:raise ValueError('Functional library mismatch')
-    frozen=json.loads((ROOT/'data/candidate_manifest.json').read_text())
-    if record.get('candidate_exclusion')!=frozen:raise ValueError('SE/SI exclusion identity mismatch')
-    if record.get('non_scan_cells',[])!=selected:raise ValueError('Non-scan configuration mismatch')
-    text=(directory/'console.log').read_text(errors='replace')
-    if re.search(r'^\s*(?://\s*)?(?:Error:|JPEG_RUN_FAILED:)',text,re.M):raise ValueError('Tool error in '+str(directory))
-    if '4384 scan cells have been identified in 44 scan chains.' not in text:raise ValueError('Scan identification evidence missing')
-    label='SA' if model=='SA' else 'TRANS'
-    report=directory/'rpt'/(label+'_FULL.report')
-    patterns=directory/'patterns'/(label+'_FULL.bin')
-    if not patterns.is_file() or patterns.stat().st_size==0:raise ValueError('Missing/empty pattern output')
-    parsed=faults(report)
-    if not any(c=='DS' or c.startswith('DS.') for c in parsed.values()):raise ValueError('No DS faults; incomplete/wrong export')
-    cov=coverage(directory/'console.log')
-    return {'directory':str(directory),'report':str(report),'report_sha256':digest(report),'coverage':cov,'non_scan_count':len(selected),'run_json_sha256':digest(directory/'run.json')}
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config',default=str(ROOT/'config.json'))
-    parser.add_argument('--work',default=str(ROOT/'ffps_work'))
-    parser.add_argument('--fs-sa',required=True,help='Previously completed excluded-FS SA run directory')
-    parser.add_argument('--fs-tr',required=True,help='Previously completed excluded-FS TR run directory')
-    args=parser.parse_args()
-    run_atpg.verify();cfg,cmd,libs=run_atpg.settings(args.config)
-    work=Path(args.work).resolve();work.mkdir(parents=True,exist_ok=True)
-    # Avoid simultaneous controllers writing the same state or exporting stale lists.
-    lock=work/'controller.lock'
-    try:lock.mkdir()
-    except FileExistsError:raise ValueError('Controller lock exists. If prior process stopped, remove the empty controller.lock directory before resuming.')
-    try:
-        execute(args,cfg,libs,work)
-    finally:lock.rmdir()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--catalog', type=Path, default=Path(__file__).resolve().parent / 'structural/cell2Fault.log')
+    p.add_argument('--report', type=Path, required=True)
+    p.add_argument('--out', type=Path, required=True)
+    a = p.parse_args()
+    if a.out.exists():
+        raise ValueError('Output exists; choose a fresh directory')
+    sites = defaultdict(set)
+    classes = defaultdict(int)
+    for i, line in enumerate(a.report.open(), 1):
+        try:fields=parse_fault_line(line)
+        except ValueError as exc:raise ValueError('Unexpected report line {}: {}'.format(i,exc))
+        if fields is None:continue
+        sites[norm(fields[2])].add(fields[2])
+        classes[fields[1]] += 1
+    if not any(k == 'DS' or k.startswith('DS.') for k in classes):
+        raise ValueError('No DS faults: verify full classified report, not AAB-only export')
+    groups = {}
+    target = None
+    for line in a.catalog.read_text().splitlines():
+        if line.startswith('Target: '):
+            target = line[8:]
+            if target in groups:
+                raise ValueError('Duplicate target')
+            groups[target] = set()
+        elif line:
+            if target is None:
+                raise ValueError('Site before Target')
+            groups[target].update(sites.get(norm(line), ()))
+    if len(groups) != 44 or any(not g for g in groups.values()):
+        raise ValueError('Expected 44 targets with nonempty report-site associations; check naming')
+    a.out.mkdir(parents=True)
+    with (a.out / 'cell2Fault.log').open('w') as f:
+        for target, group in groups.items():
+            f.write('Target: ' + target + '\n')
+            f.write(''.join(s + '\n' for s in sorted(group)))
+    manifest = dict(status='REPORT_NAME_BOUND_NOT_COLLAPSE_EQUIVALENCE_VALIDATED',
+                    candidates=44, site_counts={k: len(v) for k, v in groups.items()},
+                    class_counts=dict(classes),
+                    input_sha256={str(x): sha(x) for x in (a.catalog, a.report)},
+                    output_sha256=sha(a.out / 'cell2Fault.log'))
+    (a.out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    print('BOUND', a.out / 'cell2Fault.log')
 
-def execute(args,cfg,libs,work):
-    start=time.monotonic()
-    frozen=json.loads((ROOT/'data/candidate_manifest.json').read_text())
-    candidates=[m['exact_scan_instance'] for m in json.loads((ROOT/'evidence/candidate_mapping.json').read_text())['mapping']]
-    if len(candidates)!=44 or set(candidates)!=set((ROOT/'data/candidates.txt').read_text().splitlines()):raise ValueError('Candidate identity mismatch')
-    identity={'manifest':digest(ROOT/'MANIFEST.json'),'config':cfg,'libraries':{str(p):digest(p) for p in libs},'candidates':frozen,'batch_count':20,'criterion':'test_coverage >= FS at FS printed precision; same final list SA/TR','fs_sa':str(Path(args.fs_sa).resolve()) if args.fs_sa else None,'fs_tr':str(Path(args.fs_tr).resolve()) if args.fs_tr else None}
-    statefile=work/'state.json'
-    state=json.loads(statefile.read_text()) if statefile.exists() else {'identity':identity,'runs':{},'steps':{},'controller_wall_seconds':0}
-    if state['identity']!=identity:raise ValueError('Frozen inputs/configuration changed: use a new --work directory')
-    # Never leave an older export visible during a changed/failed validation.
-    final=work/'non_scan_cells.txt'
-    if final.exists():final.unlink()
-    save(statefile,state)
-    def run(key,model,cells,existing=None):
-        if key in state['runs']:
-            entry=state['runs'][key]
-            found=inspect_run(entry['directory'],model,cells,cfg,libs)
-            if found!=entry:raise ValueError('Cached run changed: '+key)
-            print('REUSE',key,flush=True);return found
-        if key in ('fs_sa','fs_tr') and not existing:raise ValueError('Run Full-Scan first; FFPS never launches baseline ATPG')
-        if existing:directory=existing
-        else:
-            selection=work/(key+'_selection.txt');selection.write_text(''.join(n+'\n' for n in cells))
-            command=[sys.executable,'-B',str(ROOT/'run_atpg.py'),'--config',str(Path(args.config).resolve()),'run','--model',model,'--stage','atpg','--non-scan-list',str(selection)]
-            transcript=work/(key+'_launcher.log')
-            print('ATPG',key,'non_scan',len(cells),flush=True)
-            with transcript.open('w') as log:result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,cwd=str(ROOT))
-            content=transcript.read_text(errors='replace')
-            if result.returncode:raise ValueError('ATPG failed; inspect '+str(transcript))
-            paths=re.findall(r'^RUN_DIRECTORY (.+)$',content,re.M)
-            if len(paths)!=1:raise ValueError('Cannot locate ATPG run; inspect '+str(transcript))
-            directory=paths[0]
-        entry=inspect_run(directory,model,cells,cfg,libs);state['runs'][key]=entry;save(statefile,state);return entry
-    sa=run('fs_sa','SA',[],args.fs_sa);tr=run('fs_tr','TR',[],args.fs_tr)
-    reference=faults(tr['report'])
-    bound=work/'bound_trans'
-    bind_identity={'catalog':digest(ROOT/'ffps/structural/cell2Fault.log'),'report':digest(tr['report'])}
-    if not bound.exists():
-        subprocess.run([sys.executable,'-B',str(ROOT/'ffps/bind_fault_sites.py'),'--report',tr['report'],'--out',str(bound)],check=True)
-        save(bound/'ffps_identity.json',bind_identity)
-    if json.loads((bound/'ffps_identity.json').read_text())!=bind_identity:raise ValueError('Bound association identity mismatch')
-    bm=json.loads((bound/'manifest.json').read_text())
-    if digest(bound/'cell2Fault.log')!=bm['output_sha256']:raise ValueError('Bound association changed')
-    groups=association(bound/'cell2Fault.log',candidates)
-    # Balanced contiguous split by frozen STA rank, deterministic, no random shuffle.
-    batches=[];offset=0
-    for i in range(20):
-        size=len(candidates)//20+(1 if i<len(candidates)%20 else 0)
-        batches.append(candidates[offset:offset+size]);offset+=size
-    union=[]
-    for i,cells in enumerate(batches):
-        key='batch_{:02d}'.format(i);entry=run(key,'TR',cells)
-        bad=new_problem_sites(reference,faults(entry['report']))
-        kept=filter_cells(cells,groups,bad);union.extend(kept)
-        state['steps'][key]={'attempted':cells,'new_problem_site_count':len(bad),'retained':kept};save(statefile,state)
-    merged=run('merge','TR',union)
-    bad=new_problem_sites(reference,faults(merged['report']))
-    selected=filter_cells(union,groups,bad)
-    state['steps']['merge']={'attempted':union,'new_problem_site_count':len(bad),'retained':selected};save(statefile,state)
-    final_sa=run('final_sa','SA',selected);final_tr=run('final_tr','TR',selected)
-    checks={'SA':{'full':sa['coverage'],'partial':final_sa['coverage'],'passed':covers(sa['coverage'],final_sa['coverage'])},'TR':{'full':tr['coverage'],'partial':final_tr['coverage'],'passed':covers(tr['coverage'],final_tr['coverage'])}}
-    # Diagnostic detected-set changes are not the report-precision acceptance criterion.
-    diagnostics={}
-    for model,fs,ps in [('SA',sa,final_sa),('TR',tr,final_tr)]:
-        a=faults(fs['report']);b=faults(ps['report']);isds=lambda c:c=='DS' or c.startswith('DS.')
-        common=set(a)&set(b)
-        diagnostics[model]={'fs_only':len(set(a)-set(b)),'ps_only':len(set(b)-set(a)),'lost_ds_common':sum(isds(a[k]) and not isds(b[k]) for k in common),'gained_ds_common':sum(not isds(a[k]) and isds(b[k]) for k in common)}
-    passed=all(c['passed'] for c in checks.values())
-    state['controller_wall_seconds']+=time.monotonic()-start
-    summary={'status':'ACCEPTED' if passed else 'FINAL_ACCEPTANCE_FAILED','candidate_count':44,'selected_count':len(selected),'checks':checks,'diagnostics':diagnostics,'selected':selected,'method_boundary':'Structural site association plus XX logical non-scan constraints; not collapse-equivalent reproduction or physical PS signoff','atpg_sessions_recorded':len(state['runs']),'baseline_sessions_imported':2,'ffps_sessions_launched':len(state['runs'])-2,'final_selection_sha256':hashlib.sha256((''.join(n+'\n' for n in selected)).encode()).hexdigest()}
-    save(work/'acceptance.json',summary);save(statefile,state)
-    if not passed:raise ValueError('Final same-list SA/TR coverage failed; no list exported. Inspect acceptance.json. Do not silently remove more cells or change acceptance thresholds.')
-    final.write_text(''.join(n+'\n' for n in selected))
-    print('ACCEPTED_NON_SCAN_LIST',final,flush=True)
-    if not selected:print('EMPTY_ACCEPTED_LIST: no non-scan conversion established',flush=True)
 
-if __name__=='__main__':
-    try:main()
-    except (ValueError,OSError,KeyError,subprocess.CalledProcessError) as exc:
-        print('STOP:',exc,file=sys.stderr);sys.exit(2)
+if __name__ == '__main__':
+    main()
