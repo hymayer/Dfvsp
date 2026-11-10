@@ -1,64 +1,194 @@
 #!/usr/bin/env python3
-"""Bind structural site spellings to a real full classified Tessent report."""
+"""Audit classified fault lists; Python 3.9+, standard library only."""
 import argparse
+import csv
+import fnmatch
 import hashlib
 import json
-from collections import defaultdict
-from pathlib import Path
+import re
 import sys
+from collections import Counter
+from decimal import Decimal, localcontext
+from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from fault_report import norm, parse_fault_line
 
 
-def sha(p):
-    return hashlib.sha256(p.read_bytes()).hexdigest()
+def load_faults(path, skip_regex=None):
+    faults = {}
+    duplicates = skipped = 0
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for number, raw in enumerate(stream, 1):
+            digest.update(raw)
+            line = raw.decode('utf-8-sig').strip()
+            if not line or line.startswith(('#', '//')):
+                continue
+            if skip_regex and skip_regex.fullmatch(line):
+                skipped += 1
+                continue
+            try:fields = parse_fault_line(line)
+            except ValueError as exc:raise ValueError('{}:{}: {}'.format(path,number,exc))
+            if fields is None:continue
+            value, classification, pin = fields
+            key = (value, norm(pin))
+            if key in faults:
+                if faults[key] != classification:
+                    raise ValueError(f'{path}:{number}: conflicting duplicate key {key}')
+                duplicates += 1
+            faults[key] = classification
+    if not faults:
+        raise ValueError(f'{path}: no fault records')
+    return faults, {'path': str(Path(path).resolve()), 'sha256': digest.hexdigest(),
+                    'unique_keys': len(faults), 'identical_duplicates': duplicates,
+                    'explicitly_skipped_lines': skipped}
+
+
+def matches(classification, patterns):
+    return any(fnmatch.fnmatchcase(classification, pattern) for pattern in patterns)
+
+
+def percent(numerator, denominator):
+    if not denominator:
+        return None
+    with localcontext() as ctx:
+        ctx.prec = 40
+        return format(Decimal(numerator) * 100 / Decimal(denominator), '.12f')
+
+
+def write_csv(path, header, rows):
+    with path.open('w', newline='', encoding='utf-8') as stream:
+        writer = csv.writer(stream)
+        writer.writerow(header)
+        writer.writerows(rows)
+
+
+def audit(fs_path, ffps_path, output, detected_patterns, skip_regex=None):
+    fs, fs_meta = load_faults(fs_path, skip_regex)
+    ffps, ffps_meta = load_faults(ffps_path, skip_regex)
+    fs_keys, ffps_keys = set(fs), set(ffps)
+    common = fs_keys & ffps_keys
+    fs_only, ffps_only = fs_keys - ffps_keys, ffps_keys - fs_keys
+    fs_detected = {key for key, cls in fs.items() if matches(cls, detected_patterns)}
+    ffps_detected = {key for key, cls in ffps.items() if matches(cls, detected_patterns)}
+    lost = (fs_detected & common) - ffps_detected
+    gained = (ffps_detected & common) - fs_detected
+    both = fs_detected & ffps_detected
+    missing_detected = fs_detected & fs_only
+    changed = {key for key in common if fs[key] != ffps[key]}
+    notes = [
+        'Counts are unique exported keys, not collapsed-fault weights.',
+        'Detected/key percentages are diagnostic ratios, NOT tool test coverage.',
+        'Equal keys do not prove equivalent physical fault definitions; verify export settings.',
+        'Input completeness and detected-class semantics must be verified externally.',
+    ]
+    if fs_only or ffps_only:
+        notes.append('Fault universes differ: missing keys are not counted as lost/gained.')
+    if not fs_detected or not ffps_detected:
+        notes.append('A side has zero detected keys: check class patterns and report completeness.')
+    if fs_meta['identical_duplicates'] or ffps_meta['identical_duplicates']:
+        notes.append('Identical duplicates were deduplicated; check key uniqueness/export format.')
+    result = {
+        'detected_class_patterns': detected_patterns,
+        'fs': {**fs_meta, 'class_counts': dict(sorted(Counter(fs.values()).items())),
+               'detected_keys': len(fs_detected),
+               'detected_keys_over_all_exported_keys_pct': percent(len(fs_detected), len(fs))},
+        'ffps': {**ffps_meta, 'class_counts': dict(sorted(Counter(ffps.values()).items())),
+                 'detected_keys': len(ffps_detected),
+                 'detected_keys_over_all_exported_keys_pct': percent(len(ffps_detected), len(ffps))},
+        'comparison': {
+            'same_exported_key_universe': fs_keys == ffps_keys,
+            'common_keys': len(common), 'fs_only': len(fs_only), 'ffps_only': len(ffps_only),
+            'lost_detected_on_common_keys': len(lost),
+            'gained_detected_on_common_keys': len(gained),
+            'common_detected': len(both), 'fs_detected_missing_in_ffps': len(missing_detected),
+            'classification_changed_on_common_keys': len(changed),
+            'all_fs_detected_keys_present_and_detected_in_ffps': fs_detected <= ffps_detected,
+        },
+        'notes': notes,
+    }
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=True)
+    # Summary is written last: its presence indicates completed output generation.
+    groups = {'lost': lost, 'gained': gained, 'fs_only': fs_only,
+              'ffps_only': ffps_only, 'changed': changed,
+              'fs_detected_missing': missing_detected}
+    for name, keys in groups.items():
+        write_csv(output / f'{name}.csv', ['value', 'pin', 'fs_class', 'ffps_class'],
+                  ((v, p, fs.get((v, p), ''), ffps.get((v, p), '')) for v, p in sorted(keys)))
+    transitions = Counter((fs[key], ffps[key]) for key in common)
+    write_csv(output / 'transitions.csv', ['fs_class', 'ffps_class', 'count'],
+              ((a, b, n) for (a, b), n in sorted(transitions.items())))
+    classes = sorted(set(fs.values()) | set(ffps.values()))
+    a, b = Counter(fs.values()), Counter(ffps.values())
+    write_csv(output / 'class_counts.csv', ['class', 'fs_count', 'ffps_count', 'delta'],
+              ((cls, a[cls], b[cls], b[cls] - a[cls]) for cls in classes))
+    (output / 'summary.json').write_text(json.dumps(result, indent=2, ensure_ascii=False) + '\n',
+                                       encoding='utf-8')
+    return result
 
 
 def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--catalog', type=Path, default=Path(__file__).resolve().parent / 'structural/cell2Fault.log')
-    p.add_argument('--report', type=Path, required=True)
-    p.add_argument('--out', type=Path, required=True)
-    a = p.parse_args()
-    if a.out.exists():
-        raise ValueError('Output exists; choose a fresh directory')
-    sites = defaultdict(set)
-    classes = defaultdict(int)
-    for i, line in enumerate(a.report.open(), 1):
-        try:fields=parse_fault_line(line)
-        except ValueError as exc:raise ValueError('Unexpected report line {}: {}'.format(i,exc))
-        if fields is None:continue
-        sites[norm(fields[2])].add(fields[2])
-        classes[fields[1]] += 1
-    if not any(k == 'DS' or k.startswith('DS.') for k in classes):
-        raise ValueError('No DS faults: verify full classified report, not AAB-only export')
-    groups = {}
-    target = None
-    for line in a.catalog.read_text().splitlines():
-        if line.startswith('Target: '):
-            target = line[8:]
-            if target in groups:
-                raise ValueError('Duplicate target')
-            groups[target] = set()
-        elif line:
-            if target is None:
-                raise ValueError('Site before Target')
-            groups[target].update(sites.get(norm(line), ()))
-    if len(groups) != 44 or any(not g for g in groups.values()):
-        raise ValueError('Expected 44 targets with nonempty report-site associations; check naming')
-    a.out.mkdir(parents=True)
-    with (a.out / 'cell2Fault.log').open('w') as f:
-        for target, group in groups.items():
-            f.write('Target: ' + target + '\n')
-            f.write(''.join(s + '\n' for s in sorted(group)))
-    manifest = dict(status='REPORT_NAME_BOUND_NOT_COLLAPSE_EQUIVALENCE_VALIDATED',
-                    candidates=44, site_counts={k: len(v) for k, v in groups.items()},
-                    class_counts=dict(classes),
-                    input_sha256={str(x): sha(x) for x in (a.catalog, a.report)},
-                    output_sha256=sha(a.out / 'cell2Fault.log'))
-    (a.out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    print('BOUND', a.out / 'cell2Fault.log')
+    parser = argparse.ArgumentParser(description=__doc__)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument('--fs', type=Path, help='full-scan complete classified list')
+    source.add_argument('--manifest', type=Path, help='CSV columns: case,model,fs,ffps')
+    parser.add_argument('--ffps', type=Path)
+    parser.add_argument('--out', type=Path, required=True, help='new output directory')
+    parser.add_argument('--detected', required=True,
+                        help='comma-separated, case-sensitive class patterns, e.g. DT,DT.*')
+    parser.add_argument('--skip-line-regex', help='explicit regex fullmatch for known header lines')
+    args = parser.parse_args()
+    try:
+        patterns = [p.strip() for p in args.detected.split(',') if p.strip()]
+        if not patterns:
+            raise ValueError('--detected must contain at least one class pattern')
+        skip = re.compile(args.skip_line_regex) if args.skip_line_regex else None
+        if args.out.exists():
+            raise ValueError(f'output already exists; choose a new directory: {args.out}')
+        if args.fs:
+            if not args.ffps:
+                raise ValueError('--fs requires --ffps')
+            jobs = [('single', '', args.fs.resolve(), args.ffps.resolve(), args.out)]
+        else:
+            if args.ffps:
+                raise ValueError('--ffps cannot be combined with --manifest')
+            jobs, seen = [], set()
+            with args.manifest.open(newline='', encoding='utf-8-sig') as stream:
+                reader = csv.DictReader(stream)
+                if not {'case', 'model', 'fs', 'ffps'} <= set(reader.fieldnames or []):
+                    raise ValueError('manifest requires case,model,fs,ffps columns')
+                for row in reader:
+                    case, model = row['case'], row['model']
+                    if not all(re.fullmatch(r'[A-Za-z0-9_-]+', x) for x in (case, model)):
+                        raise ValueError('case/model must use letters, digits, underscore or hyphen')
+                    if (case, model) in seen:
+                        raise ValueError(f'duplicate case/model: {case}/{model}')
+                    seen.add((case, model))
+                    paths = [(args.manifest.parent / row[x]).resolve() for x in ('fs', 'ffps')]
+                    jobs.append((case, model, *paths, args.out / case / model))
+            if not jobs:
+                raise ValueError('empty manifest')
+        for _, _, fs, ffps, _ in jobs:
+            if not fs.is_file() or not ffps.is_file():
+                raise ValueError(f'missing input file: {fs} or {ffps}')
+        rows = []
+        for case, model, fs, ffps, out in jobs:
+            result = audit(fs, ffps, out, patterns, skip)
+            cmp = result['comparison']
+            rows.append({'case': case, 'model': model,
+                         'fs_keys': result['fs']['unique_keys'],
+                         'ffps_keys': result['ffps']['unique_keys'], **cmp})
+            print(f'{case} {model}: lost={cmp["lost_detected_on_common_keys"]}, '
+                  f'gained={cmp["gained_detected_on_common_keys"]}, '
+                  f'FS-only={cmp["fs_only"]}, FFPS-only={cmp["ffps_only"]}')
+        write_csv(args.out / 'overview.csv', list(rows[0]), (row.values() for row in rows))
+        print(f'Output: {args.out.resolve()}')
+    except (ValueError, OSError, UnicodeError, re.error) as exc:
+        print(f'ERROR: {exc}', file=sys.stderr)
+        return 2
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
