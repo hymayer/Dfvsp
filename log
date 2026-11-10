@@ -1,1 +1,328 @@
-STOP: Input changed/missing: README.md
+# JPEG FFPS 全新执行包
+
+请解压到新目录，不覆盖旧结果。已修复Tessent源代码回显引起的错误误判。
+
+```csh
+tar -xzf JPEG_FFPS_report_parser_fixed_20261110.tar.gz
+cd JPEG_FFPS_report_parser_fixed_20261110
+python3 run_atpg.py verify
+python3 run_atpg.py doctor
+python3 run_atpg.py run --model SA --stage check
+python3 -u run_full_scan.py >& full_scan_console.log
+```
+
+先确认config.json的Tessent启动路径。Full-Scan阶段完成后，检查SA/TR报告，再执行日志末尾NEXT_COMMAND后的完整命令；自动进行后续FFPS，不重跑Full-Scan。
+
+最终只回传ffps_work/non_scan_cells.txt；验收失败不输出名单。全过程与方法边界见[执行指南.md](执行指南.md)。本包包含已冻结的44个CTS-STA候选、统一SE/SI排除表、模型、网表、关联数据、20-batch/merge控制器和双模型验收入口。不需要Docker，需Python3.6+和服务器Tessent。
+
+这是XX逻辑评估与静态关联的公开案例适配；实际物理non-scan实现及其最终ATPG仍需后续完成。本地模拟测试不是实际ATPG实验结果。
+
+已有SA/TR报告请先阅读[更新并复用报告.md](更新并复用报告.md)，在原目录更新后使用新FFPS工作目录，无需重跑ATPG基线。本版支持Tessent带引号、含转义空白的故障路径。
+
+
+
+{
+  "scope": "LOCAL_MOCK_AND_STATIC_CHECKS_ONLY_NOT_REAL_TESSENT",
+  "checks": [
+    "Python3.6 syntax",
+    "actual Tcl dofile and parameter-file execution with mock tool commands",
+    "25-session controller success path",
+    "same-input resume reuses completed stages",
+    "tampered report rejection removes export",
+    "final SA/TR coverage failure does not export list",
+    "new AU/AAB and association filter semantics",
+    "44 candidate exact name mapping",
+    "Full-Scan phase starts exactly 2 sessions and does not start FFPS",
+    "Full-Scan resume reuses both references",
+    "FFPS missing reference arguments rejected before work starts",
+    "FFPS imports 2 references and launches 23 sessions",
+    "Tessent echoed JPEG_RUN_FAILED error-handler source is not an actual error",
+    "Real JPEG_RUN_FAILED error line rejects rc0 completed-looking outputs",
+    "Actual quoted escaped-Verilog site example parses without losing pin or polarity",
+    "Quoted and canonical report paths compare identically",
+    "44 structural targets bind to quoted report paths",
+    "Mock complete controller uses quoted escaped instance sites"
+  ],
+  "real_tessent_ffps_executed": false,
+  "expected_real_sessions": 25,
+  "acceptance": "test_coverage >= Full-Scan at baseline printed precision for same final list SA and TR",
+  "stage_contract": "Full-Scan-only command freezes SA/TR first; FFPS requires explicit references and launches only 23 later sessions",
+  "distribution": "Fresh start; no recovery tools, old run outputs or previous references"
+}
+
+
+
+
+from pathlib import Path
+import tempfile,shutil,json,hashlib,subprocess,csv,sys,os
+ROOT=Path(__file__).resolve().parents[1]
+# Real Tcl source drives mock Tessent commands. No real ATPG claims.
+mock=r'''#!/usr/bin/env tclsh
+rename exit original_exit
+proc exit {args} {original_exit 0}
+puts {// command: puts stderr "JPEG_RUN_FAILED: $message"}
+if {[info exists ::env(FFPS_MOCK_ERROR)]} {puts "JPEG_RUN_FAILED: simulated actual tool error"}
+proc unknown {name args} {return {}}
+proc set_system_mode {mode} {puts "4384 scan cells have been identified in 44 scan chains."}
+proc report_statistics {} {
+ upvar 1 non_scan_cells cells
+ if {[info exists ::env(FFPS_MOCK_FAIL)] && [llength $cells]==44} {puts "  test_coverage 98.99%"} else {puts "  test_coverage 99.00%"}
+}
+proc write_faults {path args} {set f [open $path w]; puts $f {0 DS "/\fixture[0]$_reg /Q"};puts $f {1 DS "/\fixture[0]$_reg /Q"};close $f}
+proc write_patterns {path args} {set f [open $path w]; puts $f MOCK;close $f}
+set index [lsearch $argv -dofile]
+source [lindex $argv [expr {$index+1}]]
+'''
+with tempfile.TemporaryDirectory() as d:
+ p=Path(d)/'package';shutil.copytree(ROOT,p)
+ fake=p/'mock_tessent';fake.write_text(mock);fake.chmod(0o755)
+ cfg=json.loads((p/'config.json').read_text());cfg['tessent_command']=[str(fake)];(p/'config.json').write_text(json.dumps(cfg))
+ names=(p/'data/candidates.txt').read_text().splitlines()
+ (p/'ffps/structural/cell2Fault.log').write_text(''.join('Target: '+n+'\n/fixture[0]$_reg/Q\n' for n in names))
+ files=[f for f in p.rglob('*') if f.is_file() and f.name not in ('MANIFEST.json','config.json')]
+ (p/'MANIFEST.json').write_text(json.dumps({'files':{str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in files}}))
+ missing=subprocess.run([sys.executable,'-B',str(p/'run_ffps.py')],capture_output=True,text=True)
+ assert missing.returncode!=0 and not (p/'ffps_work').exists()
+ baseline_cmd=[sys.executable,'-B',str(p/'run_full_scan.py')]
+ baseline=subprocess.run(baseline_cmd,capture_output=True,text=True)
+ assert baseline.returncode==0,(baseline.stdout,baseline.stderr)
+ assert not (p/'ffps_work').exists(), 'Full-Scan must not launch FFPS'
+ refs=json.loads((p/'full_scan_reference/references.json').read_text())
+ assert refs['status']=='FULL_SCAN_REPORTS_FROZEN' and set(refs['runs'])=={'SA','TR'}
+ assert len(list((p/'runs').glob('*/run.json')))==2
+ repeat=subprocess.run(baseline_cmd,capture_output=True,text=True)
+ assert repeat.returncode==0 and 'REUSE_FULL_SCAN SA' in repeat.stdout and len(list((p/'runs').glob('*/run.json')))==2
+ cmd=[sys.executable,'-B',str(p/'run_ffps.py'),'--fs-sa',refs['runs']['SA']['directory'],'--fs-tr',refs['runs']['TR']['directory']]
+ r=subprocess.run(cmd,capture_output=True,text=True)
+ assert r.returncode==0,(r.stdout,r.stderr,(p/'ffps_work/fs_sa_launcher.log').read_text(),[f.read_text() for f in (p/'runs').glob('*/console.log')])
+ work=p/'ffps_work';summary=json.loads((work/'acceptance.json').read_text())
+ assert summary['status']=='ACCEPTED' and summary['selected_count']==44 and summary['atpg_sessions_recorded']==25,summary
+ assert len((work/'non_scan_cells.txt').read_text().splitlines())==44
+ assert summary['baseline_sessions_imported']==2 and summary['ffps_sessions_launched']==23
+ assert len(list((p/'runs').glob('*/run.json')))==25
+ r=subprocess.run(cmd,capture_output=True,text=True);assert r.returncode==0,(r.stdout,r.stderr)
+ assert 'ATPG batch' not in r.stdout and 'REUSE final_tr' in r.stdout
+ # Tampering with a cached report must remove export and stop on resume.
+ state=json.loads((work/'state.json').read_text());f=Path(state['runs']['final_tr']['report']);f.write_text('0 DS /tamper\n')
+ r=subprocess.run(cmd,capture_output=True,text=True);assert r.returncode!=0 and not (work/'non_scan_cells.txt').exists(),(r.stdout,r.stderr)
+ env=os.environ.copy();env['FFPS_MOCK_FAIL']='1'
+ failwork=p/'failure_work'
+ r=subprocess.run(cmd+['--work',str(failwork)],capture_output=True,text=True,env=env)
+ assert r.returncode!=0 and not (failwork/'non_scan_cells.txt').exists(),(r.stdout,r.stderr)
+ assert json.loads((failwork/'acceptance.json').read_text())['status']=='FINAL_ACCEPTANCE_FAILED'
+ env_error=os.environ.copy();env_error['FFPS_MOCK_ERROR']='1'
+ actual_error=subprocess.run(baseline_cmd+['--out',str(p/'actual_error_reference')],capture_output=True,text=True,env=env_error)
+ assert actual_error.returncode!=0 and 'FULL_SCAN TR' not in actual_error.stdout
+ print('MOCK_ONLY: separate Full-Scan-only phase, mandatory references, 23-session FFPS, resume, tamper/final-coverage rejection PASS')
+# Pure core rule assertions, including failure of final coverage gate.
+sys.path.insert(0,str(ROOT));import run_ffps as m
+assert m.new_problem_sites({('0','p'):'DS',('1','q'):'AU.PC'},{('0','p'):'AU.PC',('1','q'):'AU.PC',('0','r'):'UC.AAB'})=={'p','r'}
+assert m.filter_cells(['a','b'],{'a':{'p'},'b':{'q'}},{'p'})==['b']
+assert m.covers('99.00','99.00') and not m.covers('99.00','98.99')
+print('FILTER_AND_COVERAGE_RULES_PASS')
+
+
+# 从全新目录开始
+
+本包不含任何旧的运行结果。请解压到新目录JPEG_FFPS_report_parser_fixed_20261110，勿覆盖旧目录。保留旧结果用于追溯。
+先加载Tessent环境；config.json默认使用tessent -shell，若PATH不可用可填绝对启动路径。
+
+```csh
+tar -xzf JPEG_FFPS_report_parser_fixed_20261110.tar.gz
+cd JPEG_FFPS_report_parser_fixed_20261110
+python3 run_atpg.py verify
+python3 run_atpg.py doctor
+python3 run_atpg.py run --model SA --stage check
+python3 -u run_full_scan.py >& full_scan_console.log
+```
+
+Full-Scan阶段只跑SA/TR参考。报告检查通过后，复制full_scan_console.log末尾NEXT_COMMAND后面的完整bash -c命令执行；它可从csh/tcsh直接调用。随后自动完成20个batch、merge和最终同名单SA/TR验收。
+
+成功后只回传ffps_work/non_scan_cells.txt。文件只在双模型覆盖率验收通过时生成，空文件表示没有找到可转换的单元。
+
+以下为完整方法、目录和失败处理说明。
+
+---
+
+# JPEG FFPS 完整执行指南
+
+## 1. 最终要回传什么
+
+成功后只回传 `ffps_work/non_scan_cells.txt`。每行一个完整实例名，没有 Tcl 包装或引脚后缀；名称中的 `$`、`[`、`]` 应原样保留。此文件可用于本地后续 non-scan 实现。网表、完整故障报告、向量、日志、审计信息全部留在服务器。
+
+只有最终同一名单的 SA 和 TR 均达到各自 Full-Scan 的 test_coverage（按基线报告显示精度）时才生成该文件。名单可能为空；空名单代表没有证明可转换的单元，不构成正收益。不要回传中间 batch/merge 的名单当作最终结果。
+
+## 2. 上传与启动
+
+上传并解压完整包，进入 `JPEG_FFPS_report_parser_fixed_20261110`。需要服务器 Python 3.6+ 和 Tessent，完全不使用 Docker。先加载原来的许可证及 Tessent 环境，在 config.json 中确认 tessent_command：
+
+```json
+"tessent_command": ["/software/mentor/dft/tessent_2019_1/bin/tessent", "-shell"]
+```
+
+默认的 `tessent` 若已在 PATH 可直接使用。其余配置建议保持冻结值：collapsed faults、sequential depth 7、multiple_load、split_capture、possible credit 0、abort limits 30/300/300/300。processors=0 不主动申请额外处理器。
+
+先检查：
+
+```bash
+python3 run_atpg.py verify
+python3 run_atpg.py doctor
+python3 run_atpg.py run --model SA --stage check
+```
+
+本包继承已在 Tessent 2019.1 通过链追踪的过程文件，应看到 44 条链、4384 个扫描单元、最长链 100；若发生模型、链或 DRC 错误，停止并检查日志，不要忽略错误或添加自动黑盒。
+
+## 3. 分开执行：先 Full-Scan，再 FFPS
+
+### 第一步：单独生成 Full-Scan 故障报告
+
+```bash
+python3 -u run_full_scan.py >& full_scan_console.log
+```
+
+这一步只运行Full-Scan SA和TR各一次，固定44候选SE/SI排除规则，生成完整fault report和向量。不会启动batch、merge或FFPS选点。SA/TR需要不同fault model，因此“运行一次Full-Scan阶段”包含两个独立Tessent会话。
+
+进度及结果：
+
+```bash
+tail -f full_scan_console.log
+```
+
+成功后看到 `FULL_SCAN_REPORTS_READY`。`full_scan_reference/references.json` 保存两次运行目录、报告路径及SHA256、运行参数和test_coverage。报告仍在各自 `runs/*/rpt/` 中：
+
+- SA：`SA_FULL.report`
+- TR：`TRANS_FULL.report`
+
+先检查日志和完整报告。两份报告及排除规则即为后续固定参考，不要在FFPS运行过程中改动。Full-Scan阶段中断后重新执行同一命令，会校验并复用已完成的模型。若残留 full_scan_reference/controller.lock，须先确认旧进程已结束再用rmdir删除该空目录。
+
+### 第二步：使用指定 Full-Scan 参考执行 FFPS
+
+Full-Scan日志末尾打印完整 `NEXT_COMMAND:`；检查报告后，复制其后面的实际命令执行。其格式如下，目录名必须换为该次实际值：
+
+```bash
+python3 -u run_ffps.py \
+  --fs-sa runs/实际SA_FULL_atpg目录 \
+  --fs-tr runs/实际TR_FULL_atpg目录 \
+  >& ffps_console.log
+```
+
+`--fs-sa`、`--fs-tr`是必填项。入口不会自行生成或重跑Full-Scan；缺少参数就停止。启动时校验两次基线确已完成、没有XX选点约束、排除表/网表/功能库/参数匹配，并绑定TR报告故障位置用于关联筛选。不匹配会停止，不会静默换参考。
+
+如果已在**同一冻结配置**下手工运行 `run_atpg.py run --model SA/TR --stage atpg`，可以直接指定那两个运行目录，不必再次执行run_full_scan.py。来自不同包路径的基线因记录的模型库绝对路径等不同可能被严格校验拒绝，默认在当前新包内生成参考最稳妥。
+
+| 阶段 | 会话数 | 说明 |
+|---|---:|---|
+| 先独立完成 Full-Scan | 2 | SA/TR完整fault report |
+| 后续 batch | 20 | 每组独立TR尝试 |
+| 后续 merge | 1 | 合并后TR筛选 |
+| 后续最终验收 | 2 | 最终同一名单SA/TR |
+
+后续FFPS新启动23次ATPG会话，导入已有2份基线；全流程共25次。不并发申请25个许可证。建议在服务器已有tmux/screen中执行。观察后续进度用 `tail -f ffps_console.log`。
+
+## 4. 筛选规则
+
+候选集合固定为已有 CTS-STA 前1%的44个实例。源名单的顺序保存在 evidence/candidate_mapping.json；按该顺序平衡连续分为20组，即前4组各3个、后16组各2个。此处与 GNU split -n l/20 的实现细节不同，必须在复现说明中记录为确定性平衡分组。
+
+每个待尝试单元使用原脚本的 `add_cell_constraints -Instances $inst XX`，在进入 analysis 后、添加故障前施加。XX 屏蔽扫描加载和卸载可控可观测性，属于逻辑选择评估；没有将物理扫描触发器替换为普通触发器，也没有重连实际扫描链。
+
+与原 `compare_faults.py` 一致，以 `(故障极性, 故障位置)` 比较分类：Partial 变成 AU 类或 UO.AAB/UC.AAB，而 FS 没有相应问题分类时，收集该故障位置。关联图按位置、不区分极性；一个候选关联到任何新增问题位置就被排除。原脚本的故障定义保留，不改成“所有 DS 丢失均拒绝”。
+
+所有20个 batch 保留的候选取并集，跑一次 merge TR，再用同一规则过滤一次。最后对过滤后的名单跑 SA/TR，test_coverage 不低于各自 FS 在报告精度下的值才接受。DS lost/gained 和报告故障集合差异在 acceptance.json 单独审计，不代替 coverage 规则。
+
+SE/SI 排除集合始终是**全部44个初始候选**，每个阶段都相同，不能随各 batch 或保留名单缩小。88个引脚目标不代表固定删除176个 collapsed faults。D、Q、CK、RN/SN 不因这一规则被排除。
+
+## 5. 运行过程中保存的材料
+
+- `ffps_work/state.json`：输入身份、各阶段运行位置、batch/merge保留过程。
+- `ffps_work/bound_trans/`：静态关联与真实完整TR报告名称绑定结果。
+- `ffps_work/*_selection.txt`：本阶段尝试的名单，**不能作为最终名单回传**。
+- `ffps_work/*_launcher.log`：各次启动日志，内含实际 runs 目录。
+- `runs/*/console.log`、`run.json`、`resource_usage.txt`：真实工具输出、参数和资源统计。
+- `runs/*/rpt/TRANS_FULL.report` 或 `SA_FULL.report`：该次配置的完整分类报告。沿用FULL文件名仅为兼容原入口，是否施加XX必须看run.json的non_scan_cells；不可只凭文件名认定是FS。
+- `runs/*/patterns/`：该配置测试向量。
+- `ffps_work/acceptance.json`：最终双模型覆盖率判定和DS集合诊断。
+- `ffps_work/non_scan_cells.txt`：唯一最终回传文件，仅成功时存在。
+
+## 6. 中断、失败和续跑
+
+普通运行失败时先看 ffps_console.log 指向的具体 launcher/console 日志。不要将失败解释为“Selected 0”。修复环境后，以**相同参数**重跑 run_ffps.py，可复用已经完成且哈希不变的阶段。
+
+若进程被强制杀死，可能留下 ffps_work/controller.lock。确认旧控制器进程已经结束后，才执行：
+
+```bash
+rmdir ffps_work/controller.lock
+```
+
+随后重新执行原命令。不要在控制器仍运行时删除锁。修改 config、程序、网表或候选集合后，应先重新准备匹配的 Full-Scan 参考，并使用新的工作目录：
+
+```bash
+python3 -u run_ffps.py --fs-sa runs/新的SA目录 --fs-tr runs/新的TR目录 --work ffps_work_v2 >& ffps_console_v2.log
+```
+
+最终 SA 或 TR 覆盖率验收失败时，不生成名单，详情在 acceptance.json。当前实现不会私自放宽阈值、随机删除单元或自动切换为另一种搜索策略。需根据真实失败结果设计进一步细化，保留其新增ATPG成本。
+
+## 7. 复现边界
+
+本包实现当前仓库 ours/run_script、compare_faults.py 和 pickCell.py 的 batch/merge核心流程；Python控制器替代工业路径绑定的csh入口，防止漏首尾候选、空关联自动保留及错误报告被当作成功。原脚本副本保存在 ffps/reference，仅供核对，不要直接执行。
+
+cell2Fault 来源于提供的 jpeg_cell2fault：从候选 Q/QN 追踪组合扇出，到下游 FF D 停止，形成静态位置关联，然后与真实TR完整报告名称绑定。它不是工具collapsed-fault等价组导出；代表故障可能落在关联锥之外。因此本实验是**公开用例结构关联适配复现**，不能声称与工业关联生成器完全等价。最终SA/TR验收用于检查得到的名单，不能证明关联图穷尽或全局最优。
+
+最终名单仅完成固定协议下的逻辑XX验收。本地用它完成真实 non-scan 替换、扫描链重连及物理实现后，仍需上传实现网表按同一约束完成SA/TR再验收，才能形成完整工程验证/PPA结论。候选的STA阶段是CTS，不能写成最终布线后候选。
+
+阶段接口已修改为Full-Scan先独立完成、FFPS强制导入参考。本地交付验证包含Python3.6语法、Tcl参数/名单逐项还原、模拟25会话调度、续跑及修改结果拦截；未在本地运行Tessent，不是JPEG FFPS实验结果。Tessent XX语义参考：[Tessent Scan and ATPG User Manual](https://picture.iczhiku.com/resource/eetop/WhIDETqzGQSEJbVV.pdf)。
+
+
+
+
+
+
+
+
+
+
+
+# 修复带引号转义路径的故障报告解析
+
+实际合法故障行：
+
+```text
+0 DI.SCAN "/\dfdct_dout[0]$_DFFE_PP_ /Q"
+```
+
+旧版按所有空白拆列，错误地得到4列。新版只拆分前2个分隔，保留完整SITE；引号只作为外层包装，反斜杠和$不做Shell/Tcl求值。比较/绑定时将Verilog转义标识符的终止空白与反斜杠规范化为结构表中相同实例。故障极性仍参与比较键，不跳过有效记录。异常语法和冲突键仍报错。
+
+涉及run_ffps.py、ffps/bind_fault_sites.py、tools/compare_coverage.py三处，共用fault_report.py，避免只修第一个入口后在绑定阶段再次失败。
+
+## 在原目录更新，不重跑SA/TR
+
+将完整包JPEG_FFPS_report_parser_fixed_20261110.tar.gz上传到原JPEG_FFPS_fresh_20261110目录，在该目录执行：
+
+```csh
+cp config.json config.server.saved.json
+tar -xzf JPEG_FFPS_report_parser_fixed_20261110.tar.gz --strip-components=1
+cp config.server.saved.json config.json
+python3 run_atpg.py verify
+```
+
+保留runs及其中的真实SA/TR结果。然后使用新工作目录继续FFPS：
+
+```csh
+python3 -u run_ffps.py \
+  --fs-sa runs/SA_FULL_atpg_20261110_164812_629067 \
+  --fs-tr runs/填写已完成的TR目录 \
+  --work ffps_work_v3 \
+  >& ffps_console_v3.log
+```
+
+如果v3已有旧状态，使用其他全新目录名。不要修改原始报告或手工删除第133行。新版manifest身份变化，旧ffps_work中间状态不能直接续用，但SA/TR参数、候选及模型没有变化，原参考报告可以复用。
+
+成功后仅回传ffps_work_v3/non_scan_cells.txt。完整报告和向量留在服务器。
+
+## 本地回归检查
+
+tests/test_report_parser.py使用用户提供的合法quoted escaped-identifier格式，检查读取、规范化、极性保留、AU差异、44目标绑定和比较器一致性。
+tests/test_controller_mock.py在模拟完整25会话中使用同类路径，并检查错误行、最终验收失败和改写结果的拦截。这些是解析/流程检查，不是真实Tessent ATPG实验。
+
+
+
+
