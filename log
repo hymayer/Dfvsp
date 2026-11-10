@@ -1,4 +1,4 @@
-/software/mentor/dft/tessent_2019_1/bin/tessent -shell -dofile /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg_atpg.dofile -logfile /data5/hwx1340340/PartialScanCases/JEPG/runs/SA_FULL_check_20261110_150956_601027/tessent.log -replace
+/software/mentor/dft/tessent_2019_1/bin/tessent -shell -dofile /data5/hwx1340340/PartialScanCases/JPEG/scr/jpeg_atpg.dofile -logfile /data5/hwx1340340/PartialScanCases/JPEG/runs/SA_FULL_check_20261110_151930_692041/tessent.log -replace
 //  Tessent Shell  2019.1    Fri Feb 15 21:15:11 GMT 2019
 //                Copyright 2011-2019 Mentor Graphics Corporation
 //
@@ -8,7 +8,7 @@
 //  IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS LICENSORS AND IS
 //                        SUBJECT TO LICENSE TERMS.
 //
-//  Mentor Graphics software executing under x86-64 Linux on Tue Nov 10 15:09:58 CST 2026.
+//  Mentor Graphics software executing under x86-64 Linux on Tue Nov 10 15:19:32 CST 2026.
 //  64 bit version
 //  Host: weimingv200-4 (16 x 3.0 GHz, 64427 MB RAM, 3967 MB Swap)
 //
@@ -79,12 +79,12 @@
 //               if {[info exists ::errorInfo]} {puts stderr $::errorInfo}
 //           }
 //  sub-command: set_context patterns -scan 
-//  sub-command: read_cell_library /data5/hwx1340340/PartialScanCases/JEPG/lib/Nangate45_JPEG_generated.tcelllib 
-//  Reading DFT Library file /data5/hwx1340340/PartialScanCases/JEPG/lib/Nangate45_JPEG_generated.tcelllib
-//  Finished reading file /data5/hwx1340340/PartialScanCases/JEPG/lib/Nangate45_JPEG_generated.tcelllib
-//  sub-command: read_liberty /data5/hwx1340340/PartialScanCases/JEPG/lib/NangateOpenCellLibrary_typical_scan.lib 
+//  sub-command: read_cell_library /data5/hwx1340340/PartialScanCases/JPEG/lib/Nangate45_JPEG_generated.tcelllib 
+//  Reading DFT Library file /data5/hwx1340340/PartialScanCases/JPEG/lib/Nangate45_JPEG_generated.tcelllib
+//  Finished reading file /data5/hwx1340340/PartialScanCases/JPEG/lib/Nangate45_JPEG_generated.tcelllib
+//  sub-command: read_liberty /data5/hwx1340340/PartialScanCases/JPEG/lib/NangateOpenCellLibrary_typical_scan.lib 
 liberty_parser version 2.1
-reading /data5/hwx1340340/PartialScanCases/JEPG/lib/NangateOpenCellLibrary_typical_scan.lib...
+reading /data5/hwx1340340/PartialScanCases/JPEG/lib/NangateOpenCellLibrary_typical_scan.lib...
 ... Done. 
 Elapsed time= 0 seconds
 //  Warning: Cell 'CLKGATE_X1' is clock_gating_integrated_cell but is missing required pin attributes.
@@ -99,11 +99,11 @@ Elapsed time= 0 seconds
 //  Warning: Cell 'CLKGATE_X8' is clock_gating_integrated_cell but is missing required pin attributes.
 //           Inputs clock_gate_test_pin are missing
 //           Will not populate this cell for use in tessent shell for test logic.
-//  sub-command: read_verilog /data5/hwx1340340/PartialScanCases/JEPG/netlist/jpeg_full_scan.v 
+//  sub-command: read_verilog /data5/hwx1340340/PartialScanCases/JPEG/netlist/jpeg_full_scan.v 
 //  sub-command: set_current_design jpeg_encoder 
 //  Warning:  No match for Liberty Cell names which follow.
 //    As a result, none of their cell or pin attributes were used.
-//     All cell names that follow are from Liberty file '/data5/hwx1340340/PartialScanCases/JEPG/lib/NangateOpenCellLibrary_typical_scan.lib'.
+//     All cell names that follow are from Liberty file '/data5/hwx1340340/PartialScanCases/JPEG/lib/NangateOpenCellLibrary_typical_scan.lib'.
 //      'AND2_X4' on line 760.
 //      'AND3_X2' on line 1318.
 //      'AND3_X4' on line 1649.
@@ -186,7 +186,7 @@ Elapsed time= 0 seconds
 //      'XOR2_X2' on line 133050.
 //  sub-command: add_clocks 0 clk 
 //  sub-command: add_clocks 1 rst 
-//  sub-command: add_scan_groups group1 /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc 
+//  sub-command: add_scan_groups group1 /data5/hwx1340340/PartialScanCases/JPEG/scr/jpeg.proc 
 //  sub-command: add_scan_chains 1 group1 scan_in_0 douten 
 //  sub-command: add_scan_chains 2 group1 scan_in_1 scan_out_1 
 //  sub-command: add_scan_chains 3 group1 scan_in_2 scan_out_2 
@@ -239,27 +239,132 @@ Elapsed time= 0 seconds
 //             -CLOck_po       ON
 //  sub-command: set_split_capture_cycle on 
 //  sub-command: set_system_mode analysis 
-//  Flattening process completed, cell instances=56975, gates=130677, PIs=65, POs=70, CPU time=0.48 sec.
+//  Flattening process completed, cell instances=56975, gates=130677, PIs=65, POs=70, CPU time=0.45 sec.
 //  ---------------------------------------------------------------------------
 //  Begin circuit learning analyses.
 //  --------------------------------
-//  Learning completed, CPU time=0.73 sec.
+//  Learning completed, CPU time=0.71 sec.
 //  ---------------------------------------------------------------------------
 //  Begin scan chain identification process, memory elements = 4384.
 //  ---------------------------------------------------------------------------
-//  Reading group test procedure file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc.
-//  The following occurred at line 39 in file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc:
-//  Error: Procedure capture has an illegal event statement or event order (force). (W5-1)
-//  The following occurred at line 40 in file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc:
-//  Error: Procedure capture has an illegal event statement or event order (force). (W5-2)
-//  The following occurred at line 54 in file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc:
-//  Error: Clock 'rst' which is pulsed in timeplate _default_WFT_ may not be forced to on state. (P27-1)
-//  Error: Rules checking unsuccessful, cannot exit SETUP mode.
-JPEG_RUN_FAILED: 
+//  Reading group test procedure file /data5/hwx1340340/PartialScanCases/JPEG/scr/jpeg.proc.
+//  Simulating load/unload procedure in group1 test procedure file.
+//  Chain = 1 successfully traced with scan_cells = 100.
+//  Chain = 2 successfully traced with scan_cells = 100.
+//  Chain = 3 successfully traced with scan_cells = 100.
+//  Chain = 4 successfully traced with scan_cells = 100.
+//  Chain = 5 successfully traced with scan_cells = 100.
+//  Chain = 6 successfully traced with scan_cells = 100.
+//  Chain = 7 successfully traced with scan_cells = 100.
+//  Chain = 8 successfully traced with scan_cells = 100.
+//  Chain = 9 successfully traced with scan_cells = 100.
+//  Chain = 10 successfully traced with scan_cells = 100.
+//  Chain = 11 successfully traced with scan_cells = 100.
+//  Chain = 12 successfully traced with scan_cells = 100.
+//  Chain = 13 successfully traced with scan_cells = 100.
+//  Chain = 14 successfully traced with scan_cells = 100.
+//  Chain = 15 successfully traced with scan_cells = 100.
+//  Chain = 16 successfully traced with scan_cells = 100.
+//  Chain = 17 successfully traced with scan_cells = 100.
+//  Chain = 18 successfully traced with scan_cells = 100.
+//  Chain = 19 successfully traced with scan_cells = 100.
+//  Chain = 20 successfully traced with scan_cells = 100.
+//  Chain = 21 successfully traced with scan_cells = 100.
+//  Chain = 22 successfully traced with scan_cells = 100.
+//  Chain = 23 successfully traced with scan_cells = 100.
+//  Chain = 24 successfully traced with scan_cells = 100.
+//  Chain = 25 successfully traced with scan_cells = 100.
+//  Chain = 26 successfully traced with scan_cells = 100.
+//  Chain = 27 successfully traced with scan_cells = 100.
+//  Chain = 28 successfully traced with scan_cells = 100.
+//  Chain = 29 successfully traced with scan_cells = 100.
+//  Chain = 30 successfully traced with scan_cells = 100.
+//  Chain = 31 successfully traced with scan_cells = 100.
+//  Chain = 32 successfully traced with scan_cells = 100.
+//  Chain = 33 successfully traced with scan_cells = 100.
+//  Chain = 34 successfully traced with scan_cells = 100.
+//  Chain = 35 successfully traced with scan_cells = 100.
+//  Chain = 36 successfully traced with scan_cells = 100.
+//  Chain = 37 successfully traced with scan_cells = 100.
+//  Chain = 38 successfully traced with scan_cells = 100.
+//  Chain = 39 successfully traced with scan_cells = 84.
+//  Chain = 40 successfully traced with scan_cells = 100.
+//  Chain = 41 successfully traced with scan_cells = 100.
+//  Chain = 42 successfully traced with scan_cells = 100.
+//  Chain = 43 successfully traced with scan_cells = 100.
+//  Chain = 44 successfully traced with scan_cells = 100.
+//  4384 scan cells have been identified in 44 scan chains.
+//  Longest scan chain has 100 scan cells.
+//  ---------------------------------------------------------------------------
+//  Begin scan clock rules checking.
+//  ---------------------------------------------------------------------------
+//  2 scan clock/set/reset lines have been identified.
+//  All scan clocks successfully passed off-state check.
+//  Capture clock is set to clk.
+//  largest sequential test depth = 0, largest controllability depth = 0, largest observability depth = 0
+//  sub-command: report_scan_chains 
+chain = 1   group = group1  input = '/scan_in_0'  output = '/douten'  length = 100
+chain = 2   group = group1  input = '/scan_in_1'  output = '/scan_out_1'  length = 100
+chain = 3   group = group1  input = '/scan_in_2'  output = '/scan_out_2'  length = 100
+chain = 4   group = group1  input = '/scan_in_3'  output = '/scan_out_3'  length = 100
+chain = 5   group = group1  input = '/scan_in_4'  output = '/scan_out_4'  length = 100
+chain = 6   group = group1  input = '/scan_in_5'  output = '/scan_out_5'  length = 100
+chain = 7   group = group1  input = '/scan_in_6'  output = '/scan_out_6'  length = 100
+chain = 8   group = group1  input = '/scan_in_7'  output = '/scan_out_7'  length = 100
+chain = 9   group = group1  input = '/scan_in_8'  output = '/scan_out_8'  length = 100
+chain = 10   group = group1  input = '/scan_in_9'  output = '/scan_out_9'  length = 100
+chain = 11   group = group1  input = '/scan_in_10'  output = '/scan_out_10'  length = 100
+chain = 12   group = group1  input = '/scan_in_11'  output = '/scan_out_11'  length = 100
+chain = 13   group = group1  input = '/scan_in_12'  output = '/scan_out_12'  length = 100
+chain = 14   group = group1  input = '/scan_in_13'  output = '/scan_out_13'  length = 100
+chain = 15   group = group1  input = '/scan_in_14'  output = '/scan_out_14'  length = 100
+chain = 16   group = group1  input = '/scan_in_15'  output = '/scan_out_15'  length = 100
+chain = 17   group = group1  input = '/scan_in_16'  output = '/scan_out_16'  length = 100
+chain = 18   group = group1  input = '/scan_in_17'  output = '/scan_out_17'  length = 100
+chain = 19   group = group1  input = '/scan_in_18'  output = '/scan_out_18'  length = 100
+chain = 20   group = group1  input = '/scan_in_19'  output = '/scan_out_19'  length = 100
+chain = 21   group = group1  input = '/scan_in_20'  output = '/scan_out_20'  length = 100
+chain = 22   group = group1  input = '/scan_in_21'  output = '/scan_out_21'  length = 100
+chain = 23   group = group1  input = '/scan_in_22'  output = '/scan_out_22'  length = 100
+chain = 24   group = group1  input = '/scan_in_23'  output = '/scan_out_23'  length = 100
+chain = 25   group = group1  input = '/scan_in_24'  output = '/scan_out_24'  length = 100
+chain = 26   group = group1  input = '/scan_in_25'  output = '/scan_out_25'  length = 100
+chain = 27   group = group1  input = '/scan_in_26'  output = '/scan_out_26'  length = 100
+chain = 28   group = group1  input = '/scan_in_27'  output = '/scan_out_27'  length = 100
+chain = 29   group = group1  input = '/scan_in_28'  output = '/scan_out_28'  length = 100
+chain = 30   group = group1  input = '/scan_in_29'  output = '/scan_out_29'  length = 100
+chain = 31   group = group1  input = '/scan_in_30'  output = '/scan_out_30'  length = 100
+chain = 32   group = group1  input = '/scan_in_31'  output = '/scan_out_31'  length = 100
+chain = 33   group = group1  input = '/scan_in_32'  output = '/scan_out_32'  length = 100
+chain = 34   group = group1  input = '/scan_in_33'  output = '/scan_out_33'  length = 100
+chain = 35   group = group1  input = '/scan_in_34'  output = '/scan_out_34'  length = 100
+chain = 36   group = group1  input = '/scan_in_35'  output = '/scan_out_35'  length = 100
+chain = 37   group = group1  input = '/scan_in_36'  output = '/scan_out_36'  length = 100
+chain = 38   group = group1  input = '/scan_in_37'  output = '/scan_out_37'  length = 100
+chain = 39   group = group1  input = '/scan_in_38'  output = '/scan_out_38'  length = 84
+chain = 40   group = group1  input = '/scan_in_39'  output = '/scan_out_39'  length = 100
+chain = 41   group = group1  input = '/scan_in_40'  output = '/scan_out_40'  length = 100
+chain = 42   group = group1  input = '/scan_in_41'  output = '/scan_out_41'  length = 100
+chain = 43   group = group1  input = '/scan_in_42'  output = '/scan_out_42'  length = 100
+chain = 44   group = group1  input = '/scan_in_43'  output = '/scan_out_43'  length = 100
+//  sub-command: report_statistics 
+//  Warning: no faults have been added.
+         Statistics Report        
+          Stuck-at Faults         
+----------------------------------
+Fault Classes           #faults   
+                        (total)   
+-------------------  -------------
+  FU (full)                0      
+  -----------------  -------------
+----------------------------------
+Coverage                          
+  -----------------               
+----------------------------------
+#test_patterns                  0 
+#simulated_patterns             0 
+CPU_time (secs)               6.1 
+----------------------------------
 
-    while executing
-"set_system_mode analysis"
-    (procedure "jpeg_main" line 28)
-    invoked from within
-"jpeg_main"
+JPEG_CHECK_COMPLETE: review all 44 chains / 4384 scan cells and DRC before ATPG.
 //  command: exit -force
