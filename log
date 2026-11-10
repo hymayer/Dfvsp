@@ -1,181 +1,265 @@
+/software/mentor/dft/tessent_2019_1/bin/tessent -shell -dofile /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg_atpg.dofile -logfile /data5/hwx1340340/PartialScanCases/JEPG/runs/SA_FULL_check_20261110_150956_601027/tessent.log -replace
+//  Tessent Shell  2019.1    Fri Feb 15 21:15:11 GMT 2019
+//                Copyright 2011-2019 Mentor Graphics Corporation
+//
+//                           All Rights Reserved.
+//
+//    THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION WHICH
+//  IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS LICENSORS AND IS
+//                        SUBJECT TO LICENSE TERMS.
+//
+//  Mentor Graphics software executing under x86-64 Linux on Tue Nov 10 15:09:58 CST 2026.
+//  64 bit version
+//  Host: weimingv200-4 (16 x 3.0 GHz, 64427 MB RAM, 3967 MB Swap)
+//
+//  Note: License will be released if tool is idle for 240 minutes
+//  command: # Run only through run_atpg.py, which supplies a generated parameter file.
+//  command: proc jpeg_main {} {
+//               if {![info exists ::env(JPEG_PARAMETER_FILE)]} {error "Use run_atpg.py"}
+//               source $::env(JPEG_PARAMETER_FILE)
+//               foreach v {root out model stage cell_libraries abort_limits sequential_depth processors read_liberty_attributes} {
+//                   upvar 0 jpeg_$v $v
+//               }
+//               # source defines local variables within this proc. No environment/license dump.
+//               if {[llength $cell_libraries]==0} {error "Missing Nangate45 Tessent functional cell models"}
+//               set_context patterns -scan
+//               foreach path $cell_libraries {
+//                   if {![file isfile $path]} {error "Missing cell library: $path"}
+//                   read_cell_library $path
+//               }
+//               if {$read_liberty_attributes} {
+//                   read_liberty [file join $root lib NangateOpenCellLibrary_typical_scan.lib]
+//               }
+//               read_verilog [file join $root netlist jpeg_full_scan.v]
+//               set_current_design jpeg_encoder
+//               add_clocks 0 clk
+//               # rst directly drives active-low RN/SN; retain the user's reset-as-clock style.
+//               add_clocks 1 rst
+//               add_scan_groups group1 [file join $root scr jpeg.proc]
+//               source [file join $root scr scan_chains.tcl]
+//               # Deliberately do not auto-blackbox unresolved cells or ignore DRC errors.
+//               set_clock_off_simulation off
+//               set_pattern_type -sequential $sequential_depth -multiple_load on
+//               set_split_capture_cycle on
+//               set_system_mode analysis
+//               report_scan_chains
+//               report_statistics
+//               if {$stage eq "check"} {
+//                   set f [open [file join $out COMPLETE] w]
+//                   puts $f "ANALYSIS_ENTERED_REVIEW_SCAN_REPORT expected_chains=44 expected_scan_cells=4384"
+//                   close $f
+//                   puts "JPEG_CHECK_COMPLETE: review all 44 chains / 4384 scan cells and DRC before ATPG."
+//                   return
+//               }
+//               set_fault_mode collapsed
+//               if {$model eq "SA"} {set_fault_type stuck; set label SA} else {set_fault_type transition; set label TRANS}
+//               set_possible_credit 0
+//               add_faults -all
+//               write_faults [file join $out rpt ${label}_before.report] -replace -format basic
+//               if {$processors > 0} {add_processors $processors}
+//               set pass 0
+//               foreach limit $abort_limits {
+//                   incr pass
+//                   puts "JPEG_ATPG_PASS model=$model pass=$pass abort_limit=$limit"
+//                   set_abort_limit $limit
+//                   create_patterns -compaction_effort low -no_terminate_ineffective_atpg -no_auto
+//                   report_statistics
+//               }
+//               write_faults [file join $out rpt ${label}_FULL.report] -replace -format basic
+//               write_patterns [file join $out patterns ${label}_FULL.bin] -binary -replace
+//               report_statistics
+//               if {$processors > 0} {delete_processors}
+//               set f [open [file join $out COMPLETE] w]
+//               puts $f "ATPG_COMMANDS_COMPLETED model=$model passes=$pass"
+//               close $f
+//               puts "JPEG_ATPG_COMPLETE: full classified faults and patterns saved."
+//           }
+//  command: if {[catch {jpeg_main} message]} {
+//               puts stderr "JPEG_RUN_FAILED: $message"
+//               if {[info exists ::errorInfo]} {puts stderr $::errorInfo}
+//           }
+//  sub-command: set_context patterns -scan 
+//  sub-command: read_cell_library /data5/hwx1340340/PartialScanCases/JEPG/lib/Nangate45_JPEG_generated.tcelllib 
+//  Reading DFT Library file /data5/hwx1340340/PartialScanCases/JEPG/lib/Nangate45_JPEG_generated.tcelllib
+//  Finished reading file /data5/hwx1340340/PartialScanCases/JEPG/lib/Nangate45_JPEG_generated.tcelllib
+//  sub-command: read_liberty /data5/hwx1340340/PartialScanCases/JEPG/lib/NangateOpenCellLibrary_typical_scan.lib 
+liberty_parser version 2.1
+reading /data5/hwx1340340/PartialScanCases/JEPG/lib/NangateOpenCellLibrary_typical_scan.lib...
+... Done. 
+Elapsed time= 0 seconds
+//  Warning: Cell 'CLKGATE_X1' is clock_gating_integrated_cell but is missing required pin attributes.
+//           Inputs clock_gate_test_pin are missing
+//           Will not populate this cell for use in tessent shell for test logic.
+//  Warning: Cell 'CLKGATE_X2' is clock_gating_integrated_cell but is missing required pin attributes.
+//           Inputs clock_gate_test_pin are missing
+//           Will not populate this cell for use in tessent shell for test logic.
+//  Warning: Cell 'CLKGATE_X4' is clock_gating_integrated_cell but is missing required pin attributes.
+//           Inputs clock_gate_test_pin are missing
+//           Will not populate this cell for use in tessent shell for test logic.
+//  Warning: Cell 'CLKGATE_X8' is clock_gating_integrated_cell but is missing required pin attributes.
+//           Inputs clock_gate_test_pin are missing
+//           Will not populate this cell for use in tessent shell for test logic.
+//  sub-command: read_verilog /data5/hwx1340340/PartialScanCases/JEPG/netlist/jpeg_full_scan.v 
+//  sub-command: set_current_design jpeg_encoder 
+//  Warning:  No match for Liberty Cell names which follow.
+//    As a result, none of their cell or pin attributes were used.
+//     All cell names that follow are from Liberty file '/data5/hwx1340340/PartialScanCases/JEPG/lib/NangateOpenCellLibrary_typical_scan.lib'.
+//      'AND2_X4' on line 760.
+//      'AND3_X2' on line 1318.
+//      'AND3_X4' on line 1649.
+//      'AND4_X2' on line 2431.
+//      'AND4_X4' on line 2882.
+//      'ANTENNA_X1' on line 3333.
+//      'AOI211_X1' on line 8259.
+//      'AOI211_X2' on line 9046.
+//      'AOI211_X4' on line 9833.
+//      'AOI221_X1' on line 10620.
+//      'AOI221_X2' on line 12555.
+//      'AOI221_X4' on line 14490.
+//      'AOI222_X1' on line 16425.
+//      'AOI222_X2' on line 21204.
+//      'AOI222_X4' on line 25983.
+//      'AOI22_X2' on line 6013.
+//      'AOI22_X4' on line 7136.
+//      'BUF_X32' on line 31417.
+//      'CLKBUF_X3' on line 31810.
+//      'CLKGATETST_X1' on line 31941.
+//      'CLKGATETST_X2' on line 32695.
+//      'CLKGATETST_X4' on line 33449.
+//      'CLKGATETST_X8' on line 34203.
+//      'CLKGATE_X1' on line 34957.
+//      'CLKGATE_X2' on line 35309.
+//      'CLKGATE_X4' on line 35661.
+//      'CLKGATE_X8' on line 36013.
+//      'DFFRS_X1' on line 36365.
+//      'DFFRS_X2' on line 38753.
+//      'DFFR_X2' on line 42176.
+//      'DFFS_X2' on line 44246.
+//      'DFF_X2' on line 45711.
+//      'DLH_X1' on line 46141.
+//      'DLH_X2' on line 46493.
+//      'DLL_X1' on line 46845.
+//      'DLL_X2' on line 47197.
+//      'FILLCELL_X1' on line 49131.
+//      'FILLCELL_X16' on line 49261.
+//      'FILLCELL_X2' on line 49183.
+//      'FILLCELL_X32' on line 49287.
+//      'FILLCELL_X4' on line 49209.
+//      'FILLCELL_X8' on line 49235.
+//      'INV_X16' on line 50401.
+//      'INV_X32' on line 50532.
+//      'LOGIC1_X1' on line 50697.
+//      'NAND3_X4' on line 53252.
+//      'NAND4_X2' on line 54034.
+//      'NAND4_X4' on line 54485.
+//      'NOR3_X2' on line 55948.
+//      'NOR4_X4' on line 57512.
+//      'OAI211_X1' on line 66624.
+//      'OAI211_X4' on line 68198.
+//      'OAI21_X4' on line 58961.
+//      'OAI221_X2' on line 70920.
+//      'OAI221_X4' on line 72855.
+//      'OAI222_X1' on line 74790.
+//      'OAI222_X2' on line 79569.
+//      'OAI222_X4' on line 84348.
+//      'OAI22_X2' on line 60583.
+//      'OAI33_X1' on line 62829.
+//      'OR2_X2' on line 89354.
+//      'OR2_X4' on line 89581.
+//      'OR3_X4' on line 90470.
+//      'OR4_X1' on line 90801.
+//      'OR4_X2' on line 91252.
+//      'OR4_X4' on line 91703.
+//      'SDFFRS_X1' on line 92154.
+//      'SDFFRS_X2' on line 101489.
+//      'SDFFR_X2' on line 114806.
+//      'SDFFS_X2' on line 122770.
+//      'SDFF_X2' on line 128231.
+//      'TBUF_X1' on line 129710.
+//      'TBUF_X16' on line 130718.
+//      'TBUF_X2' on line 129962.
+//      'TBUF_X4' on line 130214.
+//      'TBUF_X8' on line 130466.
+//      'TINV_X1' on line 130970.
+//      'TLAT_X1' on line 131222.
+//      'XNOR2_X2' on line 132252.
+//      'XOR2_X2' on line 133050.
+//  sub-command: add_clocks 0 clk 
+//  sub-command: add_clocks 1 rst 
+//  sub-command: add_scan_groups group1 /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc 
+//  sub-command: add_scan_chains 1 group1 scan_in_0 douten 
+//  sub-command: add_scan_chains 2 group1 scan_in_1 scan_out_1 
+//  sub-command: add_scan_chains 3 group1 scan_in_2 scan_out_2 
+//  sub-command: add_scan_chains 4 group1 scan_in_3 scan_out_3 
+//  sub-command: add_scan_chains 5 group1 scan_in_4 scan_out_4 
+//  sub-command: add_scan_chains 6 group1 scan_in_5 scan_out_5 
+//  sub-command: add_scan_chains 7 group1 scan_in_6 scan_out_6 
+//  sub-command: add_scan_chains 8 group1 scan_in_7 scan_out_7 
+//  sub-command: add_scan_chains 9 group1 scan_in_8 scan_out_8 
+//  sub-command: add_scan_chains 10 group1 scan_in_9 scan_out_9 
+//  sub-command: add_scan_chains 11 group1 scan_in_10 scan_out_10 
+//  sub-command: add_scan_chains 12 group1 scan_in_11 scan_out_11 
+//  sub-command: add_scan_chains 13 group1 scan_in_12 scan_out_12 
+//  sub-command: add_scan_chains 14 group1 scan_in_13 scan_out_13 
+//  sub-command: add_scan_chains 15 group1 scan_in_14 scan_out_14 
+//  sub-command: add_scan_chains 16 group1 scan_in_15 scan_out_15 
+//  sub-command: add_scan_chains 17 group1 scan_in_16 scan_out_16 
+//  sub-command: add_scan_chains 18 group1 scan_in_17 scan_out_17 
+//  sub-command: add_scan_chains 19 group1 scan_in_18 scan_out_18 
+//  sub-command: add_scan_chains 20 group1 scan_in_19 scan_out_19 
+//  sub-command: add_scan_chains 21 group1 scan_in_20 scan_out_20 
+//  sub-command: add_scan_chains 22 group1 scan_in_21 scan_out_21 
+//  sub-command: add_scan_chains 23 group1 scan_in_22 scan_out_22 
+//  sub-command: add_scan_chains 24 group1 scan_in_23 scan_out_23 
+//  sub-command: add_scan_chains 25 group1 scan_in_24 scan_out_24 
+//  sub-command: add_scan_chains 26 group1 scan_in_25 scan_out_25 
+//  sub-command: add_scan_chains 27 group1 scan_in_26 scan_out_26 
+//  sub-command: add_scan_chains 28 group1 scan_in_27 scan_out_27 
+//  sub-command: add_scan_chains 29 group1 scan_in_28 scan_out_28 
+//  sub-command: add_scan_chains 30 group1 scan_in_29 scan_out_29 
+//  sub-command: add_scan_chains 31 group1 scan_in_30 scan_out_30 
+//  sub-command: add_scan_chains 32 group1 scan_in_31 scan_out_31 
+//  sub-command: add_scan_chains 33 group1 scan_in_32 scan_out_32 
+//  sub-command: add_scan_chains 34 group1 scan_in_33 scan_out_33 
+//  sub-command: add_scan_chains 35 group1 scan_in_34 scan_out_34 
+//  sub-command: add_scan_chains 36 group1 scan_in_35 scan_out_35 
+//  sub-command: add_scan_chains 37 group1 scan_in_36 scan_out_36 
+//  sub-command: add_scan_chains 38 group1 scan_in_37 scan_out_37 
+//  sub-command: add_scan_chains 39 group1 scan_in_38 scan_out_38 
+//  sub-command: add_scan_chains 40 group1 scan_in_39 scan_out_39 
+//  sub-command: add_scan_chains 41 group1 scan_in_40 scan_out_40 
+//  sub-command: add_scan_chains 42 group1 scan_in_41 scan_out_41 
+//  sub-command: add_scan_chains 43 group1 scan_in_42 scan_out_42 
+//  sub-command: add_scan_chains 44 group1 scan_in_43 scan_out_43 
+//  sub-command: set_clock_off_simulation off 
+//  sub-command: set_pattern_type -sequential 7 -multiple_load on 
+//  Settings : -RAM_sequential OFF
+//             -SEQuential     7
+//             -MULtiple_load  ON
+//             -CLOck_po       ON
+//  sub-command: set_split_capture_cycle on 
+//  sub-command: set_system_mode analysis 
+//  Flattening process completed, cell instances=56975, gates=130677, PIs=65, POs=70, CPU time=0.48 sec.
+//  ---------------------------------------------------------------------------
+//  Begin circuit learning analyses.
+//  --------------------------------
+//  Learning completed, CPU time=0.73 sec.
+//  ---------------------------------------------------------------------------
+//  Begin scan chain identification process, memory elements = 4384.
+//  ---------------------------------------------------------------------------
+//  Reading group test procedure file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc.
+//  The following occurred at line 39 in file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc:
+//  Error: Procedure capture has an illegal event statement or event order (force). (W5-1)
+//  The following occurred at line 40 in file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc:
+//  Error: Procedure capture has an illegal event statement or event order (force). (W5-2)
+//  The following occurred at line 54 in file /data5/hwx1340340/PartialScanCases/JEPG/scr/jpeg.proc:
+//  Error: Clock 'rst' which is pulsed in timeplate _default_WFT_ may not be forced to on state. (P27-1)
+//  Error: Rules checking unsuccessful, cannot exit SETUP mode.
+JPEG_RUN_FAILED: 
 
-system date
-source ../scr/gd_atpg.var.self
-
-set_context patterns -scan
-
-read_cell_library $WITA_YELLOW_ROOT/pool/tech/tech000/setup/tcbn07plus.mdt
-
-if {$version == "tpi"} {
-    read_verilog ../netlist/inserted_op_point_sa_scan.v	
-} else {
-    read_verilog $WITA_YELLOW_ROOT/pool/in/internal_designs/BBP_2G3G_TUBO_TOP_WTC/netlist/BBP_2G3G_TUBO_TOP_WTC.v
-}
-
-set_current_design BBP_2G3G_TOP_PD_INTF_TUBO_TOP_WTC_0
-
-add_clocks 0 clk_122m_tw_turbo
-add_clocks 0 clk_245m_tw_turbo
-add_clocks 0 clk_122m_u2_turbo
-add_clocks 0 clk_245m_u2_turbo
-add_clocks 0 clk_122m_cbbp_turbo
-add_clocks 0 clk_245m_cbbp_turbo
-add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_WRCK
-add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_WRCK
-add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_clk_sms
-add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_clk_sms
-add_clocks 1 rst_122m_cbbp_turbo_n
-add_clocks 1 rst_245m_cbbp_turbo_n
-add_clocks 1 rst_122m_tw_turbo_n
-add_clocks 1 rst_245m_tw_turbo_n
-add_clocks 1 rst_122m_u2_turbo_n
-add_clocks 1 rst_245m_u2_turbo_n
-add_clocks 1 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_rst_sms
-add_clocks 1 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_rst_sms
-
-add_input_constraints dft_mbist_clk_sel -C1
-add_input_constraints dft_glb_gt_se -C1
-add_input_constraints dft_mode -C1
-add_input_constraints test_se_cg -C1
-add_input_constraints vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_wr_dm0 -C1
-add_input_constraints vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_wr_dm0 -C1
-
-if {$version == "tpi"} {
-    add_input_constraints lbist_en -C1
-    add_scan_groups group1 ../scr/BBP_2G3G_TUBO_TOP_WTC_golden_TPI.proc
-} else {
-    add_scan_groups group1 ../scr/BBP_2G3G_TUBO_TOP_WTC_golden.proc
-}
-
-add_scan_chains 1 group1 dft_int_si0_1 dft_int_so0_1
-add_scan_chains 2 group1 dft_int_si0_2 dft_int_so0_2
-add_scan_chains 3 group1 dft_int_si0_3 dft_int_so0_3
-add_scan_chains 4 group1 dft_int_si0_4 dft_int_so0_4
-add_scan_chains 5 group1 dft_int_si0_5 dft_int_so0_5
-add_scan_chains 6 group1 dft_int_si0_6 dft_int_so0_6
-add_scan_chains 7 group1 dft_int_si0_7 dft_int_so0_7
-add_scan_chains 8 group1 dft_int_si0_8 dft_int_so0_8
-add_scan_chains 9 group1 dft_int_si0_9 dft_int_so0_9
-add_scan_chains 10 group1 dft_int_si0_10 dft_int_so0_10
-add_scan_chains 11 group1 dft_int_si0_11 dft_int_so0_11
-add_scan_chains 12 group1 dft_int_si0_12 dft_int_so0_12
-add_scan_chains 13 group1 dft_int_si0_13 dft_int_so0_13
-add_scan_chains 14 group1 dft_int_si0_14 dft_int_so0_14
-add_scan_chains 15 group1 dft_int_si0_15 dft_int_so0_15
-add_scan_chains 16 group1 dft_int_si0_16 dft_int_so0_16
-add_scan_chains 17 group1 dft_int_si0_17 dft_int_so0_17
-add_scan_chains 18 group1 dft_int_si0_18 dft_int_so0_18
-add_scan_chains 19 group1 dft_int_si0_19 dft_int_so0_19
-add_scan_chains 20 group1 dft_int_si0_20 dft_int_so0_20
-add_scan_chains 21 group1 dft_int_si0_21 dft_int_so0_21
-add_scan_chains 22 group1 dft_int_si0_22 dft_int_so0_22
-add_scan_chains 23 group1 dft_int_si0_23 dft_int_so0_23
-add_scan_chains 24 group1 dft_int_si0_24 dft_int_so0_24
-add_scan_chains 25 group1 dft_int_si0_25 dft_int_so0_25
-add_scan_chains 26 group1 dft_int_si0_26 dft_int_so0_26
-add_scan_chains 27 group1 dft_int_si0_27 dft_int_so0_27
-add_scan_chains 28 group1 dft_int_si0_28 dft_int_so0_28
-add_scan_chains 29 group1 dft_int_si0_29 dft_int_so0_29
-add_scan_chains 30 group1 dft_int_si0_30 dft_int_so0_30
-add_scan_chains 31 group1 dft_int_si0_31 dft_int_so0_31
-add_scan_chains 32 group1 dft_int_si0_32 dft_int_so0_32
-add_scan_chains 33 group1 dft_int_si0_33 dft_int_so0_33
-add_scan_chains 34 group1 dft_int_si0_34 dft_int_so0_34
-add_scan_chains 35 group1 dft_int_si0_35 dft_int_so0_35
-add_scan_chains 36 group1 dft_int_si0_36 dft_int_so0_36
-add_scan_chains 37 group1 dft_int_si0_37 dft_int_so0_37
-add_scan_chains 38 group1 dft_int_si0_38 dft_int_so0_38
-add_scan_chains 39 group1 dft_int_si0_39 dft_int_so0_39
-add_scan_chains 40 group1 dft_int_si0_40 dft_int_so0_40
-add_scan_chains 41 group1 dft_int_si0_41 dft_int_so0_41
-add_scan_chains 42 group1 dft_int_si0_42 dft_int_so0_42
-add_scan_chains 43 group1 dft_int_si0_43 dft_int_so0_43
-add_scan_chains 44 group1 dft_int_si0_44 dft_int_so0_44
-add_scan_chains 45 group1 dft_int_si0_45 dft_int_so0_45
-add_scan_chains 46 group1 dft_int_si0_46 dft_int_so0_46
-add_scan_chains 47 group1 dft_int_si0_47 dft_int_so0_47
-add_scan_chains 48 group1 dft_int_si0_48 dft_int_so0_48
-if {$version == "tpi"} {
-   add_scan_chains 49 group1 ts_si[0] ts_so[0]
-}
-
-add_black_box -auto
-set_clock_off_simulation off
-set_pattern_type -sequential 7 -multiple_load on
-set_split_capture_cycle on
-
-set_system_mode analysis
-
-source ../data/MC10473_001_sIE.log
-if {$batch_id != "full"} {
-    #source ../data/batch_dir/depth_batch_${batch_id}
-    source ../data/cp_pick/pick_merge_cell
-    foreach i $extral_scan_false {
-        add_cell_constraints -Instances $i XX
-    }
-}
-
-source ../data/cp_faults.log
-
-if {$tb_var == "on"} {
-    source ../scr/run_gd_check_chain.tcl
-} elseif {$tb_var == "off"} {
-}
-
-set_fault_mode collapsed
-set_fault_type stuck
-#set_fault_type transition
-
-set_possible_credit 0
-if {$samp_var == "default"} {
-    add_faults -all
-    #add_faults $faninFault
-} else {
-    add_faults -all
-    set_fault_sampling $samp_var
-}
-delete_faults $extral_scan_false_se
-delete_faults $extral_scan_false_si
-system date
-
-if {$mt_var == "on"} {
-    add_processors $cpu
-    puts "Information: Multicore : 4"
-} elseif {$mt_var == "off"} {
-    puts "Information: Multicore : None"
-}
-
-if {$tb_var == "on"} {
-    source ../scr/run_gd_atpg.tcl
-} elseif {$tb_var == "off"} {
-    source ../scr/run_gd_atpg_notb.tcl
-}
-if {$pf_var == "on"} {
-   set_debug_mode 982
-   report_instruments
-}
-if {$mt_var == "on"} {
-    delete_processors
-    puts "Information: Multicore : Close"
-} elseif {$mt_var == "off"} {
-}
-
-system date
-
-
-set_fault_mode collapsed
-#write_faults                             ../rpt/full.report      -replace -format basic
-#write_faults ../rpt/${BATCH_ID}.report -replace -format basic
-#print_UO_AAB fault
-#if {$version != "tpi"} {
-#   write_faults ../rpt/SA_AU_AAB.report -class AU -replace -format basic
-#}
-if {$batch_id != "full"} {
-   write_faults ../rpt/SA_FULL.report -replace -format basic
-} else {
-   write_faults ../rpt/SA_MERGE.report -replace -format basic
-}
-report_statistics
-
-exit -force
-
+    while executing
+"set_system_mode analysis"
+    (procedure "jpeg_main" line 28)
+    invoked from within
+"jpeg_main"
+//  command: exit -force
