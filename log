@@ -1,1 +1,29 @@
-python3 -c 'from pathlib import Path; a=sorted(Path("runs").glob("SA_FULL_atpg_*/run.json"),key=lambda p:p.stat().st_mtime); p=a[-1]; print("RUN:",p.parent); print(p.read_text()); print("CONSOLE TAIL:"); print("\n".join((p.parent/"console.log").read_text(errors="replace").splitlines()[-80:]))'
+----------------------------------------
+Coverage
+----------------------------------------
+test_coverage                99.90%
+fault_coverage               96.27%
+atpg_effectiveness           99.91%
+----------------------------------------
+#test_patterns               267
+#simulated_patterns          295
+CPU_time (secs)              34.0
+----------------------------------------
+// sub-command: write_faults /data5/hwx1340340/PartialScanCases/JPEG_FFPS/runs/SA_FULL_atpg_20261110_161813_574782/rpt/SA_FULL.report -replace -format basic
+// sub-command: write_patterns /data5/hwx1340340/PartialScanCases/JPEG_FFPS/runs/SA_FULL_atpg_20261110_161813_574782/patterns/SA_FULL.bin -binary -replace
+// sub-command: report_statistics
+Statistics Report
+Stuck-at Faults
+----------------------------------------
+Fault Classes                #faults
+                             (coll.)
+----------------------------------------
+FU (full)                    224094
+----------------------------------------
+UO (unobserved)              208 ( 0.09%)
+DS (det_simulation)          185079 (82.59%)
+DI (det_implication)         30647 (13.68%)
+UU (unused)                  7756 ( 3.46%)
+TI (tied)                    48 ( 0.02%)
+BL (blocked)                 4 ( 0.00%)
+RE (redundant)               350 ( 0.16%
