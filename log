@@ -1,3 +1,24 @@
 sed -n '125,140p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report
 
 sed -n '133p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report | cat -vet
+
+weimingv200-4:/data5/hwx1340340>sed -n '125,140p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report
+0   DI.SCAN   /scan_in_41
+1   DI.SCAN   /scan_in_41
+0   DI.SCAN   /scan_in_42
+1   DI.SCAN   /scan_in_42
+0   DI.SCAN   /scan_in_43
+1   DI.SCAN   /scan_in_43
+0   TI      /amp[11]
+1   DS      /amp[11]
+0   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
+1   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"
+0   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
+1   DS      "/\dfdct_dout[0]$_DFFE_PP_ /QN"
+0   DI.SCAN   "/\dfdct_dout[10]$_DFFE_PP_ /Q"
+1   DI.SCAN   "/\dfdct_dout[10]$_DFFE_PP_ /Q"
+0   DS      "/\dfdct_dout[10]$_DFFE_PP_ /QN"
+1   DS      "/\dfdct_dout[10]$_DFFE_PP_ /QN"
+weimingv200-4:/data5/hwx1340340>sed -n '133p' runs/SA_FULL_atpg_20261110_164812_629067/rpt/SA_FULL.report | cat -vet
+0   DI.SCAN   "/\dfdct_dout[0]$_DFFE_PP_ /Q"$
+weimingv200-4:/data5/hwx1340340>
