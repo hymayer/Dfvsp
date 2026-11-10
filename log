@@ -1,1 +1,181 @@
 
+system date
+source ../scr/gd_atpg.var.self
+
+set_context patterns -scan
+
+read_cell_library $WITA_YELLOW_ROOT/pool/tech/tech000/setup/tcbn07plus.mdt
+
+if {$version == "tpi"} {
+    read_verilog ../netlist/inserted_op_point_sa_scan.v	
+} else {
+    read_verilog $WITA_YELLOW_ROOT/pool/in/internal_designs/BBP_2G3G_TUBO_TOP_WTC/netlist/BBP_2G3G_TUBO_TOP_WTC.v
+}
+
+set_current_design BBP_2G3G_TOP_PD_INTF_TUBO_TOP_WTC_0
+
+add_clocks 0 clk_122m_tw_turbo
+add_clocks 0 clk_245m_tw_turbo
+add_clocks 0 clk_122m_u2_turbo
+add_clocks 0 clk_245m_u2_turbo
+add_clocks 0 clk_122m_cbbp_turbo
+add_clocks 0 clk_245m_cbbp_turbo
+add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_WRCK
+add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_WRCK
+add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_clk_sms
+add_clocks 0 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_clk_sms
+add_clocks 1 rst_122m_cbbp_turbo_n
+add_clocks 1 rst_245m_cbbp_turbo_n
+add_clocks 1 rst_122m_tw_turbo_n
+add_clocks 1 rst_245m_tw_turbo_n
+add_clocks 1 rst_122m_u2_turbo_n
+add_clocks 1 rst_245m_u2_turbo_n
+add_clocks 1 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_rst_sms
+add_clocks 1 vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_rst_sms
+
+add_input_constraints dft_mbist_clk_sel -C1
+add_input_constraints dft_glb_gt_se -C1
+add_input_constraints dft_mode -C1
+add_input_constraints test_se_cg -C1
+add_input_constraints vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr3_sms_stp_wr_dm0 -C1
+add_input_constraints vl_sms_BBP_2G3G_TOP_PD_INTF_MbistCntr16_sms_stp_wr_dm0 -C1
+
+if {$version == "tpi"} {
+    add_input_constraints lbist_en -C1
+    add_scan_groups group1 ../scr/BBP_2G3G_TUBO_TOP_WTC_golden_TPI.proc
+} else {
+    add_scan_groups group1 ../scr/BBP_2G3G_TUBO_TOP_WTC_golden.proc
+}
+
+add_scan_chains 1 group1 dft_int_si0_1 dft_int_so0_1
+add_scan_chains 2 group1 dft_int_si0_2 dft_int_so0_2
+add_scan_chains 3 group1 dft_int_si0_3 dft_int_so0_3
+add_scan_chains 4 group1 dft_int_si0_4 dft_int_so0_4
+add_scan_chains 5 group1 dft_int_si0_5 dft_int_so0_5
+add_scan_chains 6 group1 dft_int_si0_6 dft_int_so0_6
+add_scan_chains 7 group1 dft_int_si0_7 dft_int_so0_7
+add_scan_chains 8 group1 dft_int_si0_8 dft_int_so0_8
+add_scan_chains 9 group1 dft_int_si0_9 dft_int_so0_9
+add_scan_chains 10 group1 dft_int_si0_10 dft_int_so0_10
+add_scan_chains 11 group1 dft_int_si0_11 dft_int_so0_11
+add_scan_chains 12 group1 dft_int_si0_12 dft_int_so0_12
+add_scan_chains 13 group1 dft_int_si0_13 dft_int_so0_13
+add_scan_chains 14 group1 dft_int_si0_14 dft_int_so0_14
+add_scan_chains 15 group1 dft_int_si0_15 dft_int_so0_15
+add_scan_chains 16 group1 dft_int_si0_16 dft_int_so0_16
+add_scan_chains 17 group1 dft_int_si0_17 dft_int_so0_17
+add_scan_chains 18 group1 dft_int_si0_18 dft_int_so0_18
+add_scan_chains 19 group1 dft_int_si0_19 dft_int_so0_19
+add_scan_chains 20 group1 dft_int_si0_20 dft_int_so0_20
+add_scan_chains 21 group1 dft_int_si0_21 dft_int_so0_21
+add_scan_chains 22 group1 dft_int_si0_22 dft_int_so0_22
+add_scan_chains 23 group1 dft_int_si0_23 dft_int_so0_23
+add_scan_chains 24 group1 dft_int_si0_24 dft_int_so0_24
+add_scan_chains 25 group1 dft_int_si0_25 dft_int_so0_25
+add_scan_chains 26 group1 dft_int_si0_26 dft_int_so0_26
+add_scan_chains 27 group1 dft_int_si0_27 dft_int_so0_27
+add_scan_chains 28 group1 dft_int_si0_28 dft_int_so0_28
+add_scan_chains 29 group1 dft_int_si0_29 dft_int_so0_29
+add_scan_chains 30 group1 dft_int_si0_30 dft_int_so0_30
+add_scan_chains 31 group1 dft_int_si0_31 dft_int_so0_31
+add_scan_chains 32 group1 dft_int_si0_32 dft_int_so0_32
+add_scan_chains 33 group1 dft_int_si0_33 dft_int_so0_33
+add_scan_chains 34 group1 dft_int_si0_34 dft_int_so0_34
+add_scan_chains 35 group1 dft_int_si0_35 dft_int_so0_35
+add_scan_chains 36 group1 dft_int_si0_36 dft_int_so0_36
+add_scan_chains 37 group1 dft_int_si0_37 dft_int_so0_37
+add_scan_chains 38 group1 dft_int_si0_38 dft_int_so0_38
+add_scan_chains 39 group1 dft_int_si0_39 dft_int_so0_39
+add_scan_chains 40 group1 dft_int_si0_40 dft_int_so0_40
+add_scan_chains 41 group1 dft_int_si0_41 dft_int_so0_41
+add_scan_chains 42 group1 dft_int_si0_42 dft_int_so0_42
+add_scan_chains 43 group1 dft_int_si0_43 dft_int_so0_43
+add_scan_chains 44 group1 dft_int_si0_44 dft_int_so0_44
+add_scan_chains 45 group1 dft_int_si0_45 dft_int_so0_45
+add_scan_chains 46 group1 dft_int_si0_46 dft_int_so0_46
+add_scan_chains 47 group1 dft_int_si0_47 dft_int_so0_47
+add_scan_chains 48 group1 dft_int_si0_48 dft_int_so0_48
+if {$version == "tpi"} {
+   add_scan_chains 49 group1 ts_si[0] ts_so[0]
+}
+
+add_black_box -auto
+set_clock_off_simulation off
+set_pattern_type -sequential 7 -multiple_load on
+set_split_capture_cycle on
+
+set_system_mode analysis
+
+source ../data/MC10473_001_sIE.log
+if {$batch_id != "full"} {
+    #source ../data/batch_dir/depth_batch_${batch_id}
+    source ../data/cp_pick/pick_merge_cell
+    foreach i $extral_scan_false {
+        add_cell_constraints -Instances $i XX
+    }
+}
+
+source ../data/cp_faults.log
+
+if {$tb_var == "on"} {
+    source ../scr/run_gd_check_chain.tcl
+} elseif {$tb_var == "off"} {
+}
+
+set_fault_mode collapsed
+set_fault_type stuck
+#set_fault_type transition
+
+set_possible_credit 0
+if {$samp_var == "default"} {
+    add_faults -all
+    #add_faults $faninFault
+} else {
+    add_faults -all
+    set_fault_sampling $samp_var
+}
+delete_faults $extral_scan_false_se
+delete_faults $extral_scan_false_si
+system date
+
+if {$mt_var == "on"} {
+    add_processors $cpu
+    puts "Information: Multicore : 4"
+} elseif {$mt_var == "off"} {
+    puts "Information: Multicore : None"
+}
+
+if {$tb_var == "on"} {
+    source ../scr/run_gd_atpg.tcl
+} elseif {$tb_var == "off"} {
+    source ../scr/run_gd_atpg_notb.tcl
+}
+if {$pf_var == "on"} {
+   set_debug_mode 982
+   report_instruments
+}
+if {$mt_var == "on"} {
+    delete_processors
+    puts "Information: Multicore : Close"
+} elseif {$mt_var == "off"} {
+}
+
+system date
+
+
+set_fault_mode collapsed
+#write_faults                             ../rpt/full.report      -replace -format basic
+#write_faults ../rpt/${BATCH_ID}.report -replace -format basic
+#print_UO_AAB fault
+#if {$version != "tpi"} {
+#   write_faults ../rpt/SA_AU_AAB.report -class AU -replace -format basic
+#}
+if {$batch_id != "full"} {
+   write_faults ../rpt/SA_FULL.report -replace -format basic
+} else {
+   write_faults ../rpt/SA_MERGE.report -replace -format basic
+}
+report_statistics
+
+exit -force
+
