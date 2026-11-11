@@ -1,3 +1,13 @@
-python3 -m py_compile run_ffps.py
-python3 -c 'import hashlib,json; from pathlib import Path; p=Path("MANIFEST.json"); m=json.loads(p.read_text()); assert "run_ffps.py" in m["files"]; m["files"]["run_ffps.py"]=hashlib.sha256(Path("run_ffps.py").read_bytes()).hexdigest(); p.write_text(json.dumps(m,indent=2)+"\n")'
-python3 run_atpg.py verify
+fdct_zigzag.dct_mod.dct_block_6.dct_unit_2.macu.mult_res[15]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_6.dct_unit_6.macu.mult_res[16]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_6.dct_unit_6.macu.mult_res[18]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_6.dct_unit_0.macu.mult_res[16]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_4.dct_unit_6.macu.mult_res[18]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_6.dct_unit_0.macu.mult_res[18]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_6.dct_unit_4.macu.mult_res[16]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_0.dct_unit_2.macu.mult_res[18]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_4.dct_unit_3.macu.mult_res[18]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_7.dct_unit_4.macu.mult_res[15]$_DFFE_PP_
+fdct_zigzag.dct_mod.dct_block_4.dct_unit_4.macu.mult_res[18]$_DFFE_PP_
+
+
