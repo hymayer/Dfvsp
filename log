@@ -1,30 +1,41 @@
+#CAtpg_var_file_WM
 
-depth_data_package.tar.gz  depth_data_package/
-weimingv200-4:/data5/hwx1340340>bash depth_data_package/generate.sh C1 "$PWD"
-// Tessian Shell 2019.1   Fri Feb 15 21:15:11 GMT 2019
-//                          Copyright 2011-2019 Mentor Graphics Corporation
-//
-//                          All Rights Reserved.
-//
-// THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION WHICH
-// IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS LICENSORS AND IS
-// SUBJECT TO LICENSE TERMS.
-//
-// Mentor Graphics software executing under x86-64 Linux on Thu Nov 12 17:02:11 CST 2026.
-// 64 bit version
-// Host: weimingv200-4 (16 x 3.0 GHz, 64427 MB RAM, 3967 MB Swap)
-//
-// Note: License will be released if tool is idle for 240 minutes
-// command: set tops_out $::env(DEPTH_EXPORT_DIR)
-// command: set tops_edges 1
-// command: if {$::env(DEPTH_RAM_TYPES) ne ""} {
-//     set tops_ram_types_file $::env(DEPTH_RAM_TYPES)
-// }
-// command: source $::env(DEPTH_FS_LOAD)
-// sub-command: system date
-//
-// Thu Nov 12 17:02:27 CST 2026
-//
-// Error: can't read "env(LOWPOWER_SWITCH)": no such variable
-// 'D0File /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1/export.R6ycqD7t/export.do' aborted at line 6
-SETUP>
+set lp_var   $env(LOWPOWER_SWITCH)
+set tb_var   $env(SAVE_TB_SWITCH)
+set samp_var $env(SAMPLE_SWITCH)
+set pf_var   $env(PERFORMANCE_SWITCH)
+set mt_var   $env(MULTICORE_SWITCH)
+set WITA_YELLOW_ROOT $env(WITA_YELLOW_ROOT)
+set non_scan_var $env(NON_SCAN)
+set batch_id $env(BATCH_ID)
+set version $env(VERSION)
+
+if {$lp_var == ""} {
+    set lp_var "on"
+}
+
+if {$tb_var == ""} {
+   set tb_var "off"
+}
+
+if {$samp_var == ""} {
+   set samp_var "default"
+}
+
+if {$pf_var == ""} {
+   set pf_var "off"
+}
+
+if {$mt_var == ""} {
+   set mt_var "off"
+}
+
+
+puts "LOWPOWER_SWITCH     : $lp_var"
+puts "TESTBENCH_SWITCH    : $tb_var"
+puts "SAMPLE_SWITCH       : $samp_var"
+puts "PERFORMANCE_SWITCH  : $pf_var"
+puts "MULTICORE_SWITCH    : $mt_var"
+puts "WITA_YELLOW_ROOT   : $WITA_YELLOW_ROOT"
+puts "NON_SCAN : $non_scan_var"
+puts "BATCH_ID : $batch_id"
