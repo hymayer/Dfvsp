@@ -1,10 +1,6 @@
-TOPS exported 68000 tear instances
-TOPS export complete: /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1/export.sukJc2pz/topology
-TOPS counts: instances=68421 pins=257048 edges=324822 empty_fallbacks=0
 // command: exit -force
 Exported 12285 scan FF instances by library type to /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1/scan_ffs.txt
-Traceback (most recent call last):
-  File "/data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data_package/rank_cell_depth.py", line 9, in <module>
-    from graphlib import TopologicalSorter
-ModuleNotFoundError: No module named 'graphlib'
-weimingv200-4:/data5/hwx1340340>
+C1: 12046/12285 ranked, 239 without a PI/FF-0 path
+C1: selected 2457/2457 requested candidates -> /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1_candidates.txt
+C1: /U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_llr_buf/SP_BUF_INST_0_genblk1_U_buf_p1/LTE_DIS_U_tubo_sp_buf_uc/U_sp_buf/u_HI7PSRAMHD1536X24M8RPPGDRLPB/U_DFT_RAM_BP/bus_o_reg_2: unresolved fanout endpoints: ['UNRESOLVED:/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_llr_buf/SP_BUF_INST_0_genblk1_U_buf_p1/LTE_DIS_U_tubo_sp_buf_uc/U_sp_buf/u_HI7PSRAMHD1536X24M8RPPGDRLPB/SYNOPSYS_UNCONNECTED_3']
+weimingv200-4:/data5/hwx1340340->
