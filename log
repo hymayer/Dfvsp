@@ -1,1 +1,30 @@
 
+depth_data_package.tar.gz  depth_data_package/
+weimingv200-4:/data5/hwx1340340>bash depth_data_package/generate.sh C1 "$PWD"
+// Tessian Shell 2019.1   Fri Feb 15 21:15:11 GMT 2019
+//                          Copyright 2011-2019 Mentor Graphics Corporation
+//
+//                          All Rights Reserved.
+//
+// THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION WHICH
+// IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS LICENSORS AND IS
+// SUBJECT TO LICENSE TERMS.
+//
+// Mentor Graphics software executing under x86-64 Linux on Thu Nov 12 17:02:11 CST 2026.
+// 64 bit version
+// Host: weimingv200-4 (16 x 3.0 GHz, 64427 MB RAM, 3967 MB Swap)
+//
+// Note: License will be released if tool is idle for 240 minutes
+// command: set tops_out $::env(DEPTH_EXPORT_DIR)
+// command: set tops_edges 1
+// command: if {$::env(DEPTH_RAM_TYPES) ne ""} {
+//     set tops_ram_types_file $::env(DEPTH_RAM_TYPES)
+// }
+// command: source $::env(DEPTH_FS_LOAD)
+// sub-command: system date
+//
+// Thu Nov 12 17:02:27 CST 2026
+//
+// Error: can't read "env(LOWPOWER_SWITCH)": no such variable
+// 'D0File /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1/export.R6ycqD7t/export.do' aborted at line 6
+SETUP>
