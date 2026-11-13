@@ -1,6 +1,83 @@
-// command: exit -force
-Exported 12285 scan FF instances by library type to /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1/scan_ffs.txt
-C1: 12046/12285 ranked, 239 without a PI/FF-0 path
-C1: selected 2457/2457 requested candidates -> /data5/hwx1340340/PartialScanCases/case/MC10473/atpg_gd/depth_data/C1_candidates.txt
-C1: /U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_llr_buf/SP_BUF_INST_0_genblk1_U_buf_p1/LTE_DIS_U_tubo_sp_buf_uc/U_sp_buf/u_HI7PSRAMHD1536X24M8RPPGDRLPB/U_DFT_RAM_BP/bus_o_reg_2: unresolved fanout endpoints: ['UNRESOLVED:/U_TUBO_TOP/U_tubo/U_tubo_share/U_tubo_llr_buf/SP_BUF_INST_0_genblk1_U_buf_p1/LTE_DIS_U_tubo_sp_buf_uc/U_sp_buf/u_HI7PSRAMHD1536X24M8RPPGDRLPB/SYNOPSYS_UNCONNECTED_3']
-weimingv200-4:/data5/hwx1340340->
+"""Summarize C1-style basic stuck-at reports for a depth selection run."""
+
+import argparse
+from collections import Counter
+from fnmatch import fnmatchcase
+from pathlib import Path
+import re
+
+from run_sa_selection import feedback, read_association, read_faults
+
+
+def summarize(label, report, reference, reference_detected, associated, detected):
+    found = {key for key, status in report.items() if detected(status)}
+    lost = reference_detected - found
+    print(f"\n[{label}] unique faults={len(report)} detected={len(found)}")
+    print("classes:", dict(sorted(Counter(report.values()).items())))
+    print(f"fault keys removed={len(reference.keys() - report.keys())} "
+          f"added={len(report.keys() - reference.keys())}")
+    print(f"Full Scan detections lost={len(lost)} gained={len(found - reference_detected)}")
+    groups = Counter()
+    for key in lost:
+        status = report.get(key, "<missing>")
+        triggers = feedback(status) and not feedback(reference[key])
+        groups[status, triggers, key[1] in associated] += 1
+    for (status, triggers, hit), count in sorted(groups.items()):
+        print(f"  final_class={status} new_feedback={triggers} selected_pin_hit={hit} count={count}")
+    return lost
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("run", type=Path)
+    parser.add_argument("cell2fault", type=Path)
+    parser.add_argument("--detected", default="DT,DT.*",
+                        help="Comma-separated detected class patterns (default: DT,DT.*)")
+    args = parser.parse_args()
+    patterns = args.detected.split(",")
+
+    def detected(status):
+        return any(fnmatchcase(status, pattern) for pattern in patterns)
+
+    try:
+        association = read_association(args.cell2fault)
+        selected = set((args.run / "selected.txt").read_text().split())
+        missing = selected - association.keys()
+        if missing:
+            raise ValueError(f"{len(missing)} selected cells missing from cell2fault")
+        associated = {pin for cell in selected for pin in association[cell]}
+        full = read_faults(args.run / "full_sa/rpt/sa.report")
+        full_detected = {key for key, status in full.items() if detected(status)}
+        print(f"Detected patterns: {args.detected}")
+        print(f"Selected FFs: {len(selected)}; associated unique pins: {len(associated)}")
+        print(f"Full Scan unique faults: {len(full)}; detected: {len(full_detected)}")
+        print("Full Scan classes:", dict(sorted(Counter(full.values()).items())))
+        if not full_detected:
+            raise ValueError("Detected class filter matched no Full Scan fault; check --detected")
+
+        final = read_faults(args.run / "partial_sa/rpt/sa.report")
+        final_lost = summarize("Final Partial Scan", final, full, full_detected, associated, detected)
+        merge_path = args.run / "merge/rpt/sa.report"
+        if merge_path.is_file():
+            merge = read_faults(merge_path)
+            merge_lost = summarize("Merge before second screening", merge, full, full_detected, associated, detected)
+            print(f"\nLost in both={len(final_lost & merge_lost)} "
+                  f"lost only after final rerun={len(final_lost - merge_lost)}")
+        else:
+            print("\nMerge report unavailable.")
+
+        print("\n[Coverage lines from Tessent logs]")
+        for label in ("full_sa", "merge", "partial_sa"):
+            log = args.run / label / "log/tessent.log"
+            if log.is_file():
+                with log.open(errors="replace") as handle:
+                    matches = [line.strip() for line in handle if re.search(
+                        r"(?:test|fault)\s+coverage|total\s+faults", line, re.I)]
+                for line in matches[-12:]:
+                    print(f"{label}: {line}")
+    except (OSError, ValueError) as error:
+        parser.exit(1, f"Error: {error}\n")
+
+
+if __name__ == "__main__":
+    main()
